@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AFL Footy Tipster 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--grass:#0d1f0d;--gold:#f0a500;--gold2:#ffc940;--white:#f5f0e8;--muted:#7a9a7a;--line:rgba(240,165,0,0.13);--card:rgba(255,255,255,0.04);--cb:rgba(255,255,255,0.08);--danger:#e05252;--success:#52c27a;--info:#52a4e0;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--grass);color:var(--white);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(255,255,255,0.012) 60px),repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(255,255,255,0.012) 60px);pointer-events:none;z-index:0}
+
+/* HEADER */
+header{position:relative;z-index:10;padding:18px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:linear-gradient(180deg,rgba(0,0,0,0.45) 0%,transparent 100%)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--grass);flex-shrink:0}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--white);line-height:1}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.round-badge{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold);background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.3);padding:5px 14px;border-radius:20px;white-space:nowrap}
+.hdr-btn{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:8px 18px;border-radius:8px;cursor:pointer;border:none;transition:all .2s}
+.btn-gold{background:var(--gold);color:var(--grass)}.btn-gold:hover{background:var(--gold2)}
+.btn-ghost{background:rgba(255,255,255,0.07);color:var(--muted);border:1px solid var(--cb)}.btn-ghost:hover{color:var(--white);background:rgba(255,255,255,0.12)}
+.hdr-btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.round-select{background:rgba(0,0,0,0.4);border:1px solid var(--cb);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;max-width:220px}
+
+/* NAV */
+.nav-tabs{position:relative;z-index:10;display:flex;padding:0 24px;border-bottom:1px solid var(--line);background:rgba(0,0,0,0.18);overflow-x:auto}
+.nav-tab{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:12px 18px;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.nav-tab:hover{color:var(--white)}.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* MAIN */
+main{position:relative;z-index:5;padding:22px 24px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* PROGRESS */
+.progress-wrap{margin-bottom:18px;display:none}.progress-wrap.show{display:block}
+.progress-label{font-size:12px;color:var(--muted);margin-bottom:5px}
+.progress-track{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));width:0;transition:width .25s;border-radius:2px}
+
+/* MATCH GRID */
+.match-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+
+/* MATCH CARD */
+.match-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);overflow:hidden;transition:border-color .25s}
+.match-card:hover{border-color:rgba(240,165,0,0.22)}
+.match-card.simulated{border-color:rgba(240,165,0,0.28)}
+.card-venue{padding:9px 14px 7px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04)}
+.venue-text{font-size:11px;color:var(--muted)}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px}
+.tag-inj{background:rgba(224,82,82,0.15);color:var(--danger);border:1px solid rgba(224,82,82,0.22)}
+.tag-wx{background:rgba(82,164,224,0.12);color:var(--info);border:1px solid rgba(82,164,224,0.18)}
+.tag-bye{background:rgba(255,255,255,0.07);color:var(--muted);border:1px solid var(--cb)}
+.teams-section{padding:14px 14px 10px}
+.matchup-row{display:flex;align-items:center;gap:6px}
+.team-col{flex:1}.team-col.away{text-align:right}
+.team-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--white);line-height:1.1}
+.team-str{font-size:11px;color:var(--muted);margin-top:2px}
+.vs-badge{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0}
+.str-bars{display:flex;align-items:center;gap:5px;margin-top:7px}
+.str-wrap{flex:1;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.str-fill{height:100%;border-radius:2px;transition:width .5s}
+.str-fill.h{background:var(--gold)}.str-fill.a{background:var(--info)}
+.str-lbl{font-size:9px;color:var(--muted)}
+.sim-action{padding:0 14px 12px}
+.sim-btn{width:100%;padding:8px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);color:var(--muted);border-radius:7px;cursor:pointer;transition:all .2s}
+.sim-btn:hover{background:rgba(240,165,0,0.1);border-color:rgba(240,165,0,0.3);color:var(--gold)}
+.results-panel{padding:12px 14px;border-top:1px solid rgba(255,255,255,0.05);display:none;animation:sIn .3s ease}
+.results-panel.show{display:block}
+@keyframes sIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.winner-name{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:var(--gold)}
+.winner-pct{font-size:12px;color:var(--muted);margin-left:5px}
+.proj-score{font-size:11px;color:var(--muted);margin-top:1px;margin-bottom:10px}
+.prob-labels{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.prob-track{height:9px;background:rgba(255,255,255,0.06);border-radius:5px;overflow:hidden;display:flex}
+.prob-h{height:100%;background:var(--gold);transition:width .8s cubic-bezier(.4,0,.2,1);border-radius:5px 0 0 5px}
+.prob-a{height:100%;background:var(--info);transition:width .8s cubic-bezier(.4,0,.2,1);border-radius:0 5px 5px 0}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.stat-box{background:rgba(0,0,0,0.22);border-radius:7px;padding:7px;text-align:center}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--white)}
+.stat-lbl{font-size:9px;color:var(--muted);margin-top:1px}
+.dist-section{margin-top:10px}
+.dist-title{font-size:9px;color:var(--muted);margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase}
+.dist-bars{display:flex;align-items:flex-end;gap:3px;height:38px}
+.dist-col{flex:1;border-radius:2px 2px 0 0;min-height:2px;transition:height .5s ease}
+.dist-rlbls{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.22);margin-top:2px}
+.conf-pill{display:inline-flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-top:8px}
+.ch{background:rgba(82,194,122,.14);color:var(--success);border:1px solid rgba(82,194,122,.28)}
+.cm{background:rgba(240,165,0,.14);color:var(--gold);border:1px solid rgba(240,165,0,.28)}
+.cl{background:rgba(82,164,224,.14);color:var(--info);border:1px solid rgba(82,164,224,.2)}
+
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.s-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:18px}
+.s-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.adj-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.adj-row label{font-size:12px;color:var(--muted);flex:1}
+.adj-input,.s-select{background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:5px 8px;border-radius:6px;text-align:center}
+.adj-input{width:58px}.s-select{flex:1;text-align:left}
+.adj-input:focus,.s-select:focus{outline:none;border-color:rgba(240,165,0,.4)}
+.player-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-top:8px}
+.player-row{display:flex;align-items:center;gap:7px;background:rgba(0,0,0,0.18);border-radius:6px;padding:6px 9px}
+.p-pos{font-size:10px;color:var(--muted);width:26px;flex-shrink:0}
+.p-name{font-size:12px;color:var(--white);flex:1}
+.p-rating{width:46px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;padding:3px 5px;border-radius:5px;text-align:center}
+.p-rating:focus{outline:none;border-color:var(--gold)}
+.p-toggle{width:30px;height:17px;background:rgba(255,255,255,0.1);border-radius:9px;position:relative;cursor:pointer;flex-shrink:0;border:none;transition:background .2s}
+.p-toggle.out{background:var(--danger)}
+.p-toggle::after{content:'';position:absolute;width:11px;height:11px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s}
+.p-toggle.out::after{transform:translateX(13px)}
+.p-lbl{font-size:9px;color:var(--muted);width:22px;flex-shrink:0}
+.psec-title{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:10px 0 5px}
+
+/* SUMMARY */
+.sum-wrap{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);overflow:hidden}
+.sum-table{width:100%;border-collapse:collapse}
+.sum-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.sum-table td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px}
+.sum-table tr:hover td{background:rgba(255,255,255,0.02)}
+.tip-pill{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(240,165,0,.14);color:var(--gold)}
+.mini-bar{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-top:3px}
+.mini-fill{height:100%;background:var(--gold);border-radius:3px}
+.empty-state{text-align:center;padding:36px;color:var(--muted);font-size:13px}
+
+/* LADDER */
+.ladder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.ladder-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:12px 14px}
+.club-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.club-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.club-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white)}
+.club-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.club-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.cs-box{background:rgba(0,0,0,0.2);border-radius:6px;padding:5px;text-align:center}
+.cs-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white)}
+.cs-lbl{font-size:9px;color:var(--muted)}
+
+footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+@media(max-width:600px){header{padding:12px 14px}main{padding:14px}header .logo-text{font-size:18px}.nav-tabs{padding:0 14px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">AF</div>
+    <div>
+      <div class="logo-text">FOOTY TIPSTER</div>
+      <div class="logo-sub">2026 Season · Monte Carlo Simulator</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <select class="round-select" id="roundSel" onchange="changeRound(this.value)"></select>
+    <span class="round-badge" id="roundBadge">Round 2</span>
+    <button class="hdr-btn btn-gold" id="runAllBtn" onclick="runAllSims()">▶ Simulate All</button>
+    <button class="hdr-btn btn-ghost" onclick="showTab('summary',document.querySelectorAll('.nav-tab')[2])">📋 Tips</button>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="showTab('simulate',this)">Simulate</button>
+  <button class="nav-tab" onclick="showTab('settings',this)">Edit Players</button>
+  <button class="nav-tab" onclick="showTab('summary',this)">Tips Summary</button>
+  <button class="nav-tab" onclick="showTab('ladder',this)">Club Ratings</button>
+</nav>
+
+<main>
+  <div class="tab-panel active" id="tab-simulate">
+    <div class="progress-wrap" id="progWrap">
+      <div class="progress-label" id="progLabel">Simulating...</div>
+      <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+    </div>
+    <div class="match-grid" id="matchGrid"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-settings">
+    <div class="settings-grid" id="settingsGrid"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-summary">
+    <div class="sum-wrap">
+      <table class="sum-table">
+        <thead><tr>
+          <th>Match</th><th>Tip</th><th>Win %</th><th>Margin</th><th>Confidence</th>
+        </tr></thead>
+        <tbody id="sumBody"><tr><td colspan="5" class="empty-state">Run simulations to see your tips.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-ladder">
+    <div class="ladder-grid" id="ladderGrid"></div>
+  </div>
+</main>
+
+<footer>AFL Footy Tipster 2026 · Monte Carlo simulation (10,000 iterations per match) · For entertainment purposes only</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TEAM BASE RATINGS & ROSTERS
+// ═══════════════════════════════════════════════════════
+const TEAMS = {
+  ADE:{name:"Adelaide",color:"#002B5C",baseRating:81,formMult:1.06,players:[
+    {n:"R. Thilthorpe",r:85,pos:"FWD",out:false},{n:"I. Rankine",r:86,pos:"FWD",out:false},
+    {n:"W. Milera",r:82,pos:"MID",out:false},{n:"J. Worrell",r:81,pos:"DEF",out:false},
+    {n:"M. Crouch",r:80,pos:"MID",out:false},{n:"D. Fogarty",r:80,pos:"FWD",out:false},
+    {n:"J. Dawson",r:78,pos:"MID",out:false},{n:"B. Keays",r:79,pos:"MID",out:false}]},
+  BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.02,players:[
+    {n:"L. Neale",r:89,pos:"MID",out:false},{n:"D. Zorko",r:82,pos:"MID",out:false},
+    {n:"J. Daniher",r:83,pos:"FWD",out:false},{n:"C. Ah Chee",r:79,pos:"FWD",out:false},
+    {n:"H. McCluggage",r:84,pos:"MID",out:false},{n:"D. Rich",r:80,pos:"MID",out:false},
+    {n:"Z. Bailey",r:83,pos:"MID",out:false},{n:"D. Robertson",r:79,pos:"DEF",out:false}]},
+  CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,players:[
+    {n:"P. Cripps",r:88,pos:"MID",out:false},{n:"H. McKay",r:82,pos:"FWD",out:false},
+    {n:"S. Walsh",r:85,pos:"MID",out:false},{n:"A. Curnow",r:83,pos:"FWD",out:false},
+    {n:"L. Fogarty",r:78,pos:"MID",out:false},{n:"M. Cottrell",r:79,pos:"FWD",out:false},
+    {n:"J. De Koning",r:78,pos:"RCK",out:false},{n:"A. Saad",r:80,pos:"DEF",out:false}]},
+  COL:{name:"Collingwood",color:"#000000",baseRating:82,formMult:0.97,players:[
+    {n:"N. Daicos",r:92,pos:"MID",out:false},{n:"J. Daicos",r:86,pos:"MID",out:false},
+    {n:"B. McCreery",r:82,pos:"FWD",out:false},{n:"S. Pendlebury",r:81,pos:"MID",out:false},
+    {n:"J. Crisp",r:82,pos:"MID",out:false},{n:"D. Moore",r:83,pos:"FWD",out:false},
+    {n:"B. Frampton",r:79,pos:"DEF",out:false},{n:"J. Roughead",r:78,pos:"DEF",out:false}]},
+  ESS:{name:"Essendon",color:"#CC2031",baseRating:74,formMult:0.91,players:[
+    {n:"Z. Merrett",r:85,pos:"MID",out:false},{n:"D. Shiel",r:80,pos:"MID",out:false},
+    {n:"N. Martin",r:78,pos:"MID",out:false},{n:"P. Ambrose",r:76,pos:"FWD",out:false},
+    {n:"S. Draper",r:77,pos:"RCK",out:false},{n:"A. McGrath",r:78,pos:"DEF",out:false},
+    {n:"N. Hind",r:76,pos:"DEF",out:false},{n:"B. Cox",r:75,pos:"FWD",out:false}]},
+  FRE:{name:"Fremantle",color:"#2A1A5E",baseRating:81,formMult:1.08,players:[
+    {n:"A. Brayshaw",r:85,pos:"MID",out:false},{n:"J. Serong",r:84,pos:"MID",out:false},
+    {n:"J. Darcy",r:83,pos:"RCK",out:false},{n:"N. Fyfe",r:82,pos:"MID",out:false},
+    {n:"M. Johnson",r:80,pos:"FWD",out:false},{n:"H. Young",r:79,pos:"MID",out:false},
+    {n:"L. Ryan",r:78,pos:"DEF",out:false},{n:"A. Pearce",r:80,pos:"DEF",out:false}]},
+  GEE:{name:"Geelong",color:"#1C3C63",baseRating:84,formMult:1.05,players:[
+    {n:"J. Cameron",r:88,pos:"FWD",out:false},{n:"P. Dangerfield",r:88,pos:"MID",out:false},
+    {n:"M. Duncan",r:83,pos:"MID",out:false},{n:"T. Atkins",r:82,pos:"MID",out:false},
+    {n:"Z. Guthrie",r:81,pos:"MID",out:false},{n:"M. Holmes",r:83,pos:"MID",out:false},
+    {n:"T. Stewart",r:82,pos:"DEF",out:false},{n:"S. De Koning",r:80,pos:"RCK",out:false}]},
+  GCS:{name:"Gold Coast",color:"#CC2031",baseRating:80,formMult:1.09,players:[
+    {n:"T. Miller",r:87,pos:"MID",out:false},{n:"M. Rowell",r:86,pos:"MID",out:false},
+    {n:"N. Anderson",r:85,pos:"MID",out:false},{n:"B. King",r:83,pos:"FWD",out:false},
+    {n:"J. Walter",r:78,pos:"FWD",out:false},{n:"W. Powell",r:79,pos:"DEF",out:false},
+    {n:"B. Humphrey",r:79,pos:"FWD",out:false},{n:"S. Flanders",r:78,pos:"MID",out:false}]},
+  GWS:{name:"GWS Giants",color:"#FF7900",baseRating:79,formMult:1.05,players:[
+    {n:"L. Whitfield",r:83,pos:"MID",out:false},{n:"T. Green",r:82,pos:"MID",out:false},
+    {n:"C. Ward",r:82,pos:"MID",out:false},{n:"J. Hogan",r:81,pos:"FWD",out:false},
+    {n:"S. Taylor",r:85,pos:"DEF",out:true},{n:"J. Kelly",r:84,pos:"MID",out:true},
+    {n:"B. Daniels",r:80,pos:"FWD",out:true},{n:"H. Himmelberg",r:78,pos:"FWD",out:false}]},
+  HAW:{name:"Hawthorn",color:"#4D2004",baseRating:82,formMult:1.10,players:[
+    {n:"J. Ward",r:86,pos:"MID",out:false},{n:"J. Newcombe",r:84,pos:"MID",out:false},
+    {n:"J. Gunston",r:81,pos:"FWD",out:false},{n:"J. Sicily",r:83,pos:"DEF",out:false},
+    {n:"C. Nash",r:80,pos:"MID",out:false},{n:"K. Amon",r:79,pos:"MID",out:false},
+    {n:"L. Meek",r:78,pos:"RCK",out:false},{n:"J. Impey",r:78,pos:"MID",out:false}]},
+  MEL:{name:"Melbourne",color:"#CC2031",baseRating:78,formMult:1.04,players:[
+    {n:"M. Gawn",r:88,pos:"RCK",out:false},{n:"C. Petracca",r:87,pos:"MID",out:false},
+    {n:"C. Oliver",r:86,pos:"MID",out:false},{n:"J. Viney",r:80,pos:"MID",out:false},
+    {n:"B. Brown",r:78,pos:"FWD",out:false},{n:"A. Neal-Bullen",r:77,pos:"MID",out:false},
+    {n:"J. Bowey",r:79,pos:"DEF",out:false},{n:"T. McDonald",r:78,pos:"FWD",out:false}]},
+  NTH:{name:"North Melbourne",color:"#013B9F",baseRating:74,formMult:1.10,players:[
+    {n:"H. Sheezel",r:86,pos:"DEF",out:false},{n:"L. Davies-Uniacke",r:84,pos:"MID",out:false},
+    {n:"C. McKercher",r:83,pos:"MID",out:false},{n:"N. Larkey",r:80,pos:"FWD",out:false},
+    {n:"G. Wardlaw",r:78,pos:"MID",out:true},{n:"T. Powell",r:79,pos:"MID",out:false},
+    {n:"B. Scott",r:77,pos:"FWD",out:false},{n:"A. Hall",r:76,pos:"DEF",out:false}]},
+  POR:{name:"Port Adelaide",color:"#008AAB",baseRating:78,formMult:0.94,players:[
+    {n:"Z. Butters",r:85,pos:"MID",out:false},{n:"O. Wines",r:84,pos:"MID",out:false},
+    {n:"C. Dixon",r:83,pos:"FWD",out:false},{n:"W. Drew",r:78,pos:"MID",out:false},
+    {n:"J. Bergman",r:79,pos:"DEF",out:false},{n:"T. Jonas",r:78,pos:"DEF",out:false},
+    {n:"S. Powell-Pepper",r:79,pos:"MID",out:false},{n:"M. Georgiades",r:78,pos:"FWD",out:false}]},
+  RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.96,players:[
+    {n:"T. Taranto",r:82,pos:"MID",out:false},{n:"N. Vlastuin",r:82,pos:"DEF",out:false},
+    {n:"T. Lynch",r:79,pos:"FWD",out:false},{n:"D. Prestia",r:78,pos:"MID",out:false},
+    {n:"T. Nankervis",r:76,pos:"RCK",out:false},{n:"J. Lalor",r:75,pos:"MID",out:false},
+    {n:"M. Rioli",r:76,pos:"FWD",out:false},{n:"J. Faull",r:74,pos:"FWD",out:true}]},
+  STK:{name:"St Kilda",color:"#ED0F05",baseRating:76,formMult:0.95,players:[
+    {n:"J. Steele",r:85,pos:"MID",out:false},{n:"R. Marshall",r:83,pos:"RCK",out:false},
+    {n:"T. Higgins",r:82,pos:"FWD",out:false},{n:"M. Wood",r:79,pos:"MID",out:false},
+    {n:"B. Paton",r:78,pos:"MID",out:false},{n:"M. Phillipou",r:81,pos:"FWD",out:true},
+    {n:"L. Ryan",r:78,pos:"FWD",out:true},{n:"A. Sharman",r:77,pos:"FWD",out:false}]},
+  SYD:{name:"Sydney Swans",color:"#ED171F",baseRating:84,formMult:1.02,players:[
+    {n:"E. Gulden",r:92,pos:"MID",out:true},{n:"I. Heeney",r:90,pos:"MID",out:true},
+    {n:"C. Mills",r:85,pos:"MID",out:false},{n:"J. McInerney",r:80,pos:"MID",out:false},
+    {n:"N. Blakey",r:82,pos:"DEF",out:false},{n:"J. Amartey",r:79,pos:"FWD",out:false},
+    {n:"B. Grundy",r:80,pos:"RCK",out:false},{n:"L. Parker",r:79,pos:"MID",out:false}]},
+  WBD:{name:"W. Bulldogs",color:"#014896",baseRating:83,formMult:1.08,players:[
+    {n:"M. Bontempelli",r:94,pos:"MID",out:false},{n:"A. Treloar",r:83,pos:"MID",out:false},
+    {n:"A. Naughton",r:85,pos:"FWD",out:false},{n:"S. Darcy",r:83,pos:"RCK",out:false},
+    {n:"E. Richards",r:82,pos:"DEF",out:false},{n:"T. Liberatore",r:81,pos:"MID",out:false},
+    {n:"J. Ugle-Hagan",r:80,pos:"FWD",out:false},{n:"J. Freijah",r:79,pos:"MID",out:false}]},
+  WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.90,players:[
+    {n:"E. Yeo",r:83,pos:"MID",out:false},{n:"T. Kelly",r:80,pos:"MID",out:false},
+    {n:"J. Barrass",r:78,pos:"DEF",out:false},{n:"O. Allen",r:77,pos:"FWD",out:false},
+    {n:"B. Williams",r:74,pos:"MID",out:false},{n:"H. Edwards",r:73,pos:"DEF",out:false},
+    {n:"L. Shuey",r:74,pos:"MID",out:false},{n:"J. Waterman",r:73,pos:"FWD",out:false}]},
+};
+
+// ═══════════════════════════════════════════════════════
+// FULL 2026 FIXTURE
+// ═══════════════════════════════════════════════════════
+const FIXTURE = {
+  "OR":{label:"Opening Round",dates:"5–8 Mar",matches:[
+    {h:"SYD",a:"CAR",venue:"SCG · Thu 5 Mar",hga:7,h2h:0},
+    {h:"GCS",a:"GEE",venue:"People First Stadium · Fri 6 Mar",hga:6,h2h:-4},
+    {h:"GWS",a:"HAW",venue:"Engie Stadium · Sat 7 Mar",hga:5,h2h:-1},
+    {h:"BRI",a:"WBD",venue:"Gabba · Sat 7 Mar",hga:7,h2h:1},
+    {h:"STK",a:"COL",venue:"MCG · Sun 8 Mar",hga:0,h2h:-3},
+  ]},
+  "1":{label:"Round 1",dates:"12–15 Mar",matches:[
+    {h:"CAR",a:"RIC",venue:"MCG · Thu 12 Mar",hga:5,h2h:2},
+    {h:"ESS",a:"HAW",venue:"MCG · Fri 13 Mar",hga:0,h2h:-1},
+    {h:"WBD",a:"GWS",venue:"Marvel · Sat 14 Mar",hga:5,h2h:2},
+    {h:"GEE",a:"FRE",venue:"GMHBA · Sat 14 Mar",hga:7,h2h:3},
+    {h:"SYD",a:"BRI",venue:"SCG · Sat 14 Mar",hga:7,h2h:1},
+    {h:"COL",a:"ADE",venue:"MCG · Sat 14 Mar",hga:5,h2h:0},
+    {h:"NTH",a:"POR",venue:"Marvel · Sun 15 Mar",hga:5,h2h:-2},
+    {h:"MEL",a:"STK",venue:"MCG · Sun 15 Mar",hga:5,h2h:2},
+    {h:"GCS",a:"WCE",venue:"People First Stadium · Sun 15 Mar",hga:7,h2h:5},
+  ]},
+  "2":{label:"Round 2",dates:"19–22 Mar",matches:[
+    {h:"HAW",a:"SYD",venue:"MCG · Thu 19 Mar",hga:6,h2h:2},
+    {h:"ADE",a:"WBD",venue:"Adelaide Oval · Fri 20 Mar",hga:7,h2h:5},
+    {h:"RIC",a:"GCS",venue:"MCG · Sat 21 Mar",hga:5,h2h:-8},
+    {h:"GWS",a:"STK",venue:"Engie Stadium · Sat 21 Mar",hga:7,h2h:5},
+    {h:"FRE",a:"MEL",venue:"Optus Stadium · Sat 21 Mar",weather:"☀ 30°C",hga:9,h2h:-2},
+    {h:"POR",a:"ESS",venue:"Adelaide Oval · Sun 22 Mar",hga:7,h2h:4},
+    {h:"WCE",a:"NTH",venue:"Optus Stadium · Sun 22 Mar",weather:"☀ 30°C",hga:7,h2h:-5},
+  ]},
+  "3":{label:"Round 3",dates:"26–29 Mar",matches:[
+    {h:"GEE",a:"ADE",venue:"GMHBA · Thu 26 Mar",hga:7,h2h:2},
+    {h:"COL",a:"GWS",venue:"Marvel · Fri 27 Mar",hga:5,h2h:3},
+    {h:"STK",a:"BRI",venue:"Marvel · Sat 28 Mar",hga:5,h2h:-3},
+    {h:"FRE",a:"RIC",venue:"Optus Stadium · Sat 28 Mar",hga:9,h2h:4},
+    {h:"ESS",a:"NTH",venue:"Marvel · Sat 28 Mar",hga:5,h2h:1},
+    {h:"POR",a:"WCE",venue:"Adelaide Oval · Sun 29 Mar",hga:8,h2h:6},
+    {h:"CAR",a:"MEL",venue:"MCG · Sun 29 Mar",hga:5,h2h:-1},
+  ]},
+  "4":{label:"Round 4",dates:"2–6 Apr",matches:[
+    {h:"BRI",a:"COL",venue:"Gabba · Thu 2 Apr",hga:7,h2h:-1},
+    {h:"NTH",a:"CAR",venue:"Marvel · Fri 3 Apr",hga:5,h2h:-3},
+    {h:"ADE",a:"FRE",venue:"Adelaide Oval · Fri 3 Apr",hga:7,h2h:1},
+    {h:"RIC",a:"POR",venue:"MCG · Sat 4 Apr",hga:5,h2h:-3},
+    {h:"WCE",a:"SYD",venue:"Optus Stadium · Sat 4 Apr",hga:7,h2h:-5},
+    {h:"MEL",a:"GCS",venue:"MCG · Sun 5 Apr",hga:5,h2h:4},
+    {h:"WBD",a:"ESS",venue:"Marvel · Sun 5 Apr",hga:5,h2h:3},
+    {h:"HAW",a:"GEE",venue:"MCG · Mon 6 Apr",hga:5,h2h:0},
+  ]},
+  "5":{label:"Round 5 — Gather Round",dates:"9–12 Apr",matches:[
+    {h:"ADE",a:"CAR",venue:"Adelaide Oval · Thu 9 Apr",hga:7,h2h:2},
+    {h:"COL",a:"FRE",venue:"Adelaide Oval · Fri 10 Apr",hga:0,h2h:2},
+    {h:"NTH",a:"BRI",venue:"Barossa Park · Sat 11 Apr",hga:0,h2h:-4},
+    {h:"ESS",a:"MEL",venue:"Adelaide Oval · Sat 11 Apr",hga:0,h2h:-1},
+    {h:"SYD",a:"GCS",venue:"Norwood Oval · Sat 11 Apr",hga:0,h2h:2},
+    {h:"HAW",a:"WBD",venue:"Adelaide Oval · Sat 11 Apr",hga:0,h2h:1},
+    {h:"GEE",a:"WCE",venue:"Norwood Oval · Sun 12 Apr",hga:0,h2h:6},
+    {h:"GWS",a:"RIC",venue:"Barossa Park · Sun 12 Apr",hga:0,h2h:4},
+    {h:"POR",a:"STK",venue:"Adelaide Oval · Sun 12 Apr",hga:0,h2h:4},
+  ]},
+  "6":{label:"Round 6",dates:"16–19 Apr",matches:[
+    {h:"CAR",a:"COL",venue:"MCG · Thu 16 Apr",hga:5,h2h:-2},
+    {h:"GEE",a:"WBD",venue:"GMHBA · Fri 17 Apr",hga:7,h2h:1},
+    {h:"SYD",a:"GWS",venue:"SCG · Fri 17 Apr",hga:7,h2h:2},
+    {h:"GCS",a:"ESS",venue:"People First Stadium · Sat 18 Apr",hga:6,h2h:3},
+    {h:"HAW",a:"POR",venue:"Marvel · Sat 18 Apr",hga:5,h2h:1},
+    {h:"ADE",a:"STK",venue:"Adelaide Oval · Sat 18 Apr",hga:7,h2h:3},
+    {h:"NTH",a:"RIC",venue:"Marvel · Sun 19 Apr",hga:5,h2h:2},
+    {h:"MEL",a:"BRI",venue:"MCG · Sun 19 Apr",hga:5,h2h:-1},
+    {h:"WCE",a:"FRE",venue:"Optus Stadium · Sun 19 Apr",hga:7,h2h:-3},
+  ]},
+  "7":{label:"Round 7 — Anzac Round",dates:"23–26 Apr",matches:[
+    {h:"WBD",a:"SYD",venue:"Marvel · Thu 23 Apr",hga:5,h2h:0},
+    {h:"RIC",a:"MEL",venue:"MCG · Fri 24 Apr",hga:5,h2h:-2},
+    {h:"HAW",a:"GCS",venue:"UTAS Stadium · Sat 25 Apr",hga:5,h2h:2},
+    {h:"ESS",a:"COL",venue:"MCG · Sat 25 Apr — Anzac Day",hga:0,h2h:-1},
+    {h:"POR",a:"GEE",venue:"Adelaide Oval · Sat 25 Apr",hga:7,h2h:0},
+    {h:"FRE",a:"CAR",venue:"Optus Stadium · Sat 25 Apr",hga:9,h2h:2},
+    {h:"STK",a:"WCE",venue:"Marvel · Sun 26 Apr",hga:5,h2h:3},
+    {h:"BRI",a:"ADE",venue:"Gabba · Sun 26 Apr",hga:7,h2h:-1},
+    {h:"GWS",a:"NTH",venue:"Canberra · Sun 26 Apr",hga:4,h2h:4},
+  ]},
+  "8":{label:"Round 8",dates:"30 Apr–3 May",matches:[
+    {h:"COL",a:"HAW",venue:"MCG · Thu 30 Apr",hga:5,h2h:0},
+    {h:"WBD",a:"FRE",venue:"Marvel · Fri 1 May",hga:5,h2h:1},
+    {h:"ADE",a:"POR",venue:"Adelaide Oval · Fri 1 May",hga:6,h2h:1},
+    {h:"ESS",a:"BRI",venue:"Marvel · Sat 2 May",hga:5,h2h:-3},
+    {h:"WCE",a:"RIC",venue:"Optus Stadium · Sat 2 May",hga:7,h2h:2},
+    {h:"GEE",a:"NTH",venue:"GMHBA · Sat 2 May",hga:7,h2h:4},
+    {h:"CAR",a:"STK",venue:"Marvel · Sat 2 May",hga:5,h2h:2},
+    {h:"SYD",a:"MEL",venue:"SCG · Sun 3 May",hga:7,h2h:1},
+    {h:"GCS",a:"GWS",venue:"People First Stadium · Sun 3 May",hga:6,h2h:-1},
+  ]},
+  "9":{label:"Round 9",dates:"7–10 May",matches:[
+    {h:"FRE",a:"HAW",venue:"Optus Stadium · Thu 7 May",hga:9,h2h:-1},
+    {h:"BRI",a:"CAR",venue:"Gabba · Fri 8 May",hga:7,h2h:1},
+    {h:"POR",a:"WBD",venue:"Adelaide Oval · Fri 8 May",hga:7,h2h:0},
+    {h:"NTH",a:"SYD",venue:"Marvel · Sat 9 May",hga:5,h2h:-5},
+    {h:"GWS",a:"ESS",venue:"Engie Stadium · Sat 9 May",hga:7,h2h:3},
+    {h:"GCS",a:"STK",venue:"TIO Stadium · Sat 9 May",weather:"☀ Darwin",hga:4,h2h:4},
+    {h:"GEE",a:"COL",venue:"MCG · Sat 9 May",hga:5,h2h:2},
+    {h:"MEL",a:"WCE",venue:"Marvel · Sun 10 May",hga:5,h2h:5},
+    {h:"RIC",a:"ADE",venue:"MCG · Sun 10 May",hga:5,h2h:-2},
+  ]},
+  "10":{label:"Round 10",dates:"14–17 May",matches:[
+    {h:"BRI",a:"GEE",venue:"Gabba · Thu 14 May",hga:7,h2h:-1},
+    {h:"SYD",a:"COL",venue:"SCG · Fri 15 May",hga:7,h2h:0},
+    {h:"GCS",a:"POR",venue:"TIO Stadium · Fri 15 May",weather:"☀ Darwin",hga:4,h2h:-5},
+    {h:"ADE",a:"NTH",venue:"Adelaide Oval · Sat 16 May",hga:7,h2h:3},
+    {h:"MEL",a:"HAW",venue:"MCG · Sat 16 May",hga:5,h2h:-1},
+    {h:"CAR",a:"WBD",venue:"Marvel · Sat 16 May",hga:5,h2h:-1},
+    {h:"ESS",a:"FRE",venue:"MCG · Sun 17 May",hga:5,h2h:1},
+    {h:"STK",a:"RIC",venue:"Marvel · Sun 17 May",hga:5,h2h:2},
+    {h:"WCE",a:"GWS",venue:"Optus Stadium · Sun 17 May",hga:7,h2h:-3},
+  ]},
+  "11":{label:"Round 11 — Sir Doug Nicholls",dates:"21–24 May",matches:[
+    {h:"HAW",a:"ADE",venue:"UTAS Stadium · Thu 21 May",hga:5,h2h:2},
+    {h:"RIC",a:"ESS",venue:"MCG · Fri 22 May",hga:5,h2h:1},
+    {h:"FRE",a:"STK",venue:"Optus Stadium · Fri 22 May",hga:9,h2h:3},
+    {h:"NTH",a:"GCS",venue:"Marvel · Sat 23 May",hga:5,h2h:-2},
+    {h:"GEE",a:"SYD",venue:"GMHBA · Sat 23 May",hga:7,h2h:2},
+    {h:"COL",a:"WCE",venue:"MCG · Sat 23 May",hga:5,h2h:5},
+    {h:"POR",a:"CAR",venue:"Adelaide Oval · Sat 23 May",hga:7,h2h:2},
+    {h:"GWS",a:"BRI",venue:"Engie Stadium · Sun 24 May",hga:7,h2h:-2},
+    {h:"WBD",a:"MEL",venue:"Marvel · Sun 24 May",hga:5,h2h:2},
+  ]},
+  "12":{label:"Round 12",dates:"28–31 May",byes:["ADE","GCS","NTH","POR"],matches:[
+    {h:"STK",a:"HAW",venue:"Marvel · Thu 28 May",hga:5,h2h:-3},
+    {h:"CAR",a:"GEE",venue:"MCG · Fri 29 May",hga:5,h2h:-3},
+    {h:"SYD",a:"RIC",venue:"SCG · Sat 30 May",hga:7,h2h:4},
+    {h:"BRI",a:"FRE",venue:"Gabba · Sat 30 May",hga:7,h2h:1},
+    {h:"WBD",a:"COL",venue:"Marvel · Sat 30 May",hga:5,h2h:-1},
+    {h:"MEL",a:"GWS",venue:"TIO Park · Sun 31 May",weather:"☀ Darwin",hga:4,h2h:2},
+    {h:"WCE",a:"ESS",venue:"Optus Stadium · Sun 31 May",hga:7,h2h:-1},
+  ]},
+  "13":{label:"Round 13",dates:"4–8 Jun",byes:["GWS","RIC"],matches:[
+    {h:"ADE",a:"GEE",venue:"Adelaide Oval · Thu 4 Jun",hga:7,h2h:-2},
+    {h:"HAW",a:"WBD",venue:"MCG · Fri 5 Jun",hga:5,h2h:1},
+    {h:"NTH",a:"FRE",venue:"Hobart · Sat 6 Jun",hga:4,h2h:-2},
+    {h:"GCS",a:"BRI",venue:"People First Stadium · Sat 6 Jun",hga:6,h2h:-4},
+    {h:"WCE",a:"POR",venue:"Optus Stadium · Sat 6 Jun",hga:7,h2h:-3},
+    {h:"SYD",a:"STK",venue:"SCG · Sun 7 Jun",hga:7,h2h:2},
+    {h:"ESS",a:"CAR",venue:"MCG · Sun 7 Jun",hga:5,h2h:0},
+    {h:"COL",a:"MEL",venue:"MCG · Mon 8 Jun",hga:5,h2h:2},
+  ]},
+  "14":{label:"Round 14",dates:"11–14 Jun",byes:["CAR","COL","FRE","HAW"],matches:[
+    {h:"WBD",a:"ADE",venue:"Marvel · Thu 11 Jun",hga:5,h2h:2},
+    {h:"GEE",a:"GCS",venue:"GMHBA · Fri 12 Jun",hga:7,h2h:5},
+    {h:"MEL",a:"ESS",venue:"MCG · Sat 13 Jun",hga:5,h2h:2},
+    {h:"NTH",a:"WCE",venue:"Optus Stadium · Sat 13 Jun",hga:0,h2h:3},
+    {h:"POR",a:"SYD",venue:"Adelaide Oval · Sat 13 Jun",hga:7,h2h:-1},
+    {h:"RIC",a:"BRI",venue:"Norwood Oval · Sun 14 Jun",hga:3,h2h:-4},
+    {h:"STK",a:"GWS",venue:"Marvel · Sun 14 Jun",hga:5,h2h:-3},
+  ]},
+  "15":{label:"Round 15",dates:"18–21 Jun",byes:["BRI","ESS","SYD","WCE"],matches:[
+    {h:"FRE",a:"GEE",venue:"Optus Stadium · Thu 18 Jun",hga:9,h2h:-2},
+    {h:"GCS",a:"HAW",venue:"People First Stadium · Fri 19 Jun",hga:6,h2h:-2},
+    {h:"ADE",a:"MEL",venue:"Adelaide Oval · Sat 20 Jun",hga:7,h2h:1},
+    {h:"GWS",a:"CAR",venue:"Engie Stadium · Sat 20 Jun",hga:7,h2h:1},
+    {h:"COL",a:"POR",venue:"MCG · Sat 20 Jun",hga:5,h2h:2},
+    {h:"RIC",a:"NTH",venue:"MCG · Sun 21 Jun",hga:5,h2h:2},
+    {h:"STK",a:"WBD",venue:"Marvel · Sun 21 Jun",hga:5,h2h:-3},
+  ]},
+  "16":{label:"Round 16",dates:"25–28 Jun",byes:["GEE","MEL","STK","WBD"],matches:[
+    {h:"BRI",a:"SYD",venue:"Gabba · Thu 25 Jun",hga:7,h2h:1},
+    {h:"CAR",a:"WCE",venue:"Marvel · Fri 26 Jun",hga:5,h2h:4},
+    {h:"COL",a:"RIC",venue:"MCG · Sat 27 Jun",hga:5,h2h:4},
+    {h:"FRE",a:"GCS",venue:"Optus Stadium · Sat 27 Jun",hga:9,h2h:2},
+    {h:"HAW",a:"GWS",venue:"MCG · Sat 27 Jun",hga:5,h2h:2},
+    {h:"NTH",a:"ESS",venue:"Marvel · Sat 27 Jun",hga:5,h2h:2},
+    {h:"POR",a:"ADE",venue:"Adelaide Oval · Sun 28 Jun",hga:7,h2h:1},
+  ]},
+  "17":{label:"Round 17",dates:"2–5 Jul",matches:[
+    {h:"ESS",a:"STK",venue:"Marvel · Thu 2 Jul",hga:5,h2h:1},
+    {h:"GEE",a:"BRI",venue:"GMHBA · Fri 3 Jul",hga:7,h2h:0},
+    {h:"GCS",a:"COL",venue:"People First Stadium · Sat 4 Jul",hga:6,h2h:-2},
+    {h:"GWS",a:"FRE",venue:"Canberra · Sat 4 Jul",hga:4,h2h:1},
+    {h:"HAW",a:"MEL",venue:"UTAS Stadium · Sat 4 Jul",hga:5,h2h:2},
+    {h:"POR",a:"NTH",venue:"Adelaide Oval · Sat 4 Jul",hga:7,h2h:3},
+    {h:"RIC",a:"CAR",venue:"MCG · Sun 5 Jul",hga:5,h2h:1},
+    {h:"SYD",a:"WBD",venue:"SCG · Sun 5 Jul",hga:7,h2h:0},
+    {h:"WCE",a:"ADE",venue:"Optus Stadium · Sun 5 Jul",hga:7,h2h:-2},
+  ]},
+  "18":{label:"Round 18",dates:"9–12 Jul",matches:[
+    {h:"ADE",a:"GCS",venue:"Adelaide Oval · Thu 9 Jul",hga:7,h2h:4},
+    {h:"BRI",a:"ESS",venue:"Gabba · Fri 10 Jul",hga:7,h2h:3},
+    {h:"CAR",a:"HAW",venue:"MCG · Sat 11 Jul",hga:5,h2h:-1},
+    {h:"COL",a:"NTH",venue:"Marvel · Sat 11 Jul",hga:5,h2h:3},
+    {h:"FRE",a:"SYD",venue:"Optus Stadium · Sat 11 Jul",hga:9,h2h:2},
+    {h:"GWS",a:"GEE",venue:"Engie Stadium · Sat 11 Jul",hga:7,h2h:-2},
+    {h:"MEL",a:"RIC",venue:"MCG · Sat 11 Jul",hga:5,h2h:3},
+    {h:"STK",a:"POR",venue:"Marvel · Sat 11 Jul",hga:5,h2h:-4},
+    {h:"WBD",a:"WCE",venue:"Marvel · Sun 12 Jul",hga:5,h2h:5},
+  ]},
+  "19":{label:"Round 19",dates:"16–19 Jul",matches:[
+    {h:"COL",a:"CAR",venue:"MCG · Thu 16 Jul",hga:5,h2h:2},
+    {h:"ESS",a:"GWS",venue:"Marvel · Fri 17 Jul",hga:5,h2h:-2},
+    {h:"GEE",a:"STK",venue:"GMHBA · Sat 18 Jul",hga:7,h2h:4},
+    {h:"GCS",a:"WBD",venue:"People First Stadium · Sat 18 Jul",hga:6,h2h:-3},
+    {h:"NTH",a:"MEL",venue:"Marvel · Sat 18 Jul",hga:5,h2h:-3},
+    {h:"POR",a:"FRE",venue:"Adelaide Oval · Sat 18 Jul",hga:7,h2h:1},
+    {h:"RIC",a:"HAW",venue:"MCG · Sun 19 Jul",hga:5,h2h:-3},
+    {h:"SYD",a:"ADE",venue:"SCG · Sun 19 Jul",hga:7,h2h:1},
+    {h:"WCE",a:"BRI",venue:"Optus Stadium · Sun 19 Jul",hga:7,h2h:-5},
+  ]},
+  "20":{label:"Round 20",dates:"23–26 Jul",matches:[
+    {h:"ADE",a:"COL",venue:"Adelaide Oval · Thu 23 Jul",hga:7,h2h:0},
+    {h:"BRI",a:"POR",venue:"Gabba · Fri 24 Jul",hga:7,h2h:0},
+    {h:"CAR",a:"GCS",venue:"Marvel · Sat 25 Jul",hga:5,h2h:2},
+    {h:"FRE",a:"WCE",venue:"Optus Stadium · Sat 25 Jul",hga:9,h2h:5},
+    {h:"GWS",a:"SYD",venue:"Engie Stadium · Sat 25 Jul",hga:7,h2h:-2},
+    {h:"HAW",a:"ESS",venue:"MCG · Sat 25 Jul",hga:5,h2h:3},
+    {h:"NTH",a:"STK",venue:"Marvel · Sat 25 Jul",hga:5,h2h:1},
+    {h:"MEL",a:"GEE",venue:"MCG · Sat 25 Jul",hga:5,h2h:-2},
+    {h:"WBD",a:"RIC",venue:"Marvel · Sat 25 Jul",hga:5,h2h:4},
+  ]},
+  "21":{label:"Round 21",dates:"30 Jul–2 Aug",matches:[
+    {h:"CAR",a:"BRI",venue:"Marvel · Thu 30 Jul",hga:5,h2h:-2},
+    {h:"COL",a:"GEE",venue:"MCG · Fri 31 Jul",hga:5,h2h:1},
+    {h:"ESS",a:"ADE",venue:"Marvel · Fri 31 Jul",hga:5,h2h:-2},
+    {h:"FRE",a:"WBD",venue:"Optus Stadium · Sat 1 Aug",hga:9,h2h:0},
+    {h:"GCS",a:"MEL",venue:"People First Stadium · Sat 1 Aug",hga:6,h2h:-4},
+    {h:"HAW",a:"NTH",venue:"UTAS Stadium · Sat 1 Aug",hga:5,h2h:2},
+    {h:"POR",a:"GWS",venue:"Adelaide Oval · Sat 1 Aug",hga:7,h2h:1},
+    {h:"RIC",a:"WCE",venue:"MCG · Sat 1 Aug",hga:5,h2h:2},
+    {h:"STK",a:"SYD",venue:"Marvel · Sat 1 Aug",hga:5,h2h:-2},
+  ]},
+  "22":{label:"Round 22",dates:"6–9 Aug",matches:[
+    {h:"ADE",a:"RIC",venue:"Adelaide Oval · Thu 6 Aug",hga:7,h2h:3},
+    {h:"BRI",a:"HAW",venue:"Gabba · Fri 7 Aug",hga:7,h2h:-1},
+    {h:"GEE",a:"ESS",venue:"GMHBA · Sat 8 Aug",hga:7,h2h:5},
+    {h:"GWS",a:"GCS",venue:"Canberra · Sat 8 Aug",hga:4,h2h:-1},
+    {h:"MEL",a:"FRE",venue:"MCG · Sat 8 Aug",hga:5,h2h:-2},
+    {h:"STK",a:"CAR",venue:"Marvel · Sat 8 Aug",hga:5,h2h:-1},
+    {h:"SYD",a:"POR",venue:"SCG · Sat 8 Aug",hga:7,h2h:1},
+    {h:"WCE",a:"COL",venue:"Optus Stadium · Sun 9 Aug",hga:7,h2h:-5},
+    {h:"WBD",a:"NTH",venue:"Marvel · Sun 9 Aug",hga:5,h2h:2},
+  ]},
+  "23":{label:"Round 23",dates:"14–16 Aug",matches:[
+    {h:"BRI",a:"GCS",venue:"Gabba · Fri 14 Aug",hga:7,h2h:1},
+    {h:"ESS",a:"SYD",venue:"MCG · Sat 15 Aug",hga:5,h2h:-2},
+    {h:"FRE",a:"ADE",venue:"Optus Stadium · Sat 15 Aug",hga:9,h2h:1},
+    {h:"GWS",a:"WCE",venue:"Engie Stadium · Sat 15 Aug",hga:7,h2h:4},
+    {h:"HAW",a:"COL",venue:"MCG · Sat 15 Aug",hga:5,h2h:0},
+    {h:"NTH",a:"GEE",venue:"Marvel · Sat 15 Aug",hga:5,h2h:-4},
+    {h:"POR",a:"MEL",venue:"Adelaide Oval · Sat 15 Aug",hga:7,h2h:0},
+    {h:"RIC",a:"STK",venue:"MCG · Sat 15 Aug",hga:5,h2h:2},
+    {h:"WBD",a:"CAR",venue:"Marvel · Sun 16 Aug",hga:5,h2h:1},
+  ]},
+  "24":{label:"Round 24",dates:"21–24 Aug",matches:[
+    {h:"ADE",a:"GWS",venue:"Adelaide Oval · Thu 21 Aug",hga:7,h2h:1},
+    {h:"COL",a:"BRI",venue:"MCG · Fri 22 Aug",hga:5,h2h:1},
+    {h:"CAR",a:"FRE",venue:"Marvel · Sat 23 Aug",hga:5,h2h:-2},
+    {h:"ESS",a:"POR",venue:"Marvel · Sat 23 Aug",hga:5,h2h:-3},
+    {h:"GEE",a:"RIC",venue:"GMHBA · Sat 23 Aug",hga:7,h2h:5},
+    {h:"MEL",a:"WBD",venue:"MCG · Sat 23 Aug",hga:5,h2h:-1},
+    {h:"STK",a:"GCS",venue:"Marvel · Sat 23 Aug",hga:5,h2h:-2},
+    {h:"SYD",a:"NTH",venue:"SCG · Sat 23 Aug",hga:7,h2h:4},
+    {h:"WCE",a:"HAW",venue:"Optus Stadium · Sun 24 Aug",hga:7,h2h:-3},
+  ]},
+};
+
+const ROUND_KEYS = ["OR","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"];
+let currentRound = "2";
+let simResults = {};
+
+// ═══════════════════════════════════════════════════════
+// SIMULATION ENGINE
+// ═══════════════════════════════════════════════════════
+function randn(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+
+function teamStr(short){
+  const t=TEAMS[short];if(!t)return 78;
+  const active=t.players.filter(p=>!p.out);
+  if(!active.length)return t.baseRating*t.formMult;
+  const avg=active.reduce((s,p)=>s+p.r,0)/active.length;
+  const injPen=t.players.filter(p=>p.out).reduce((s,p)=>s+(p.r-70)*0.18,0);
+  return(t.baseRating*0.45+avg*0.55-injPen)*t.formMult;
+}
+
+function runSim(match,n=10000){
+  const hs=teamStr(match.h),as=teamStr(match.a);
+  const baseDiff=(hs-as)+match.hga+match.h2h;
+  const base=92;
+  let hw=0;const margins=[],hss=[],ass=[];
+  for(let i=0;i<n;i++){
+    const d=baseDiff+randn()*22;
+    const hs_=Math.max(35,Math.round(base+d*0.5+randn()*14));
+    const as_=Math.max(35,Math.round(base-d*0.5+randn()*14));
+    if(d>0)hw++;
+    margins.push(Math.abs(d));hss.push(hs_);ass.push(as_);
+  }
+  const hwp=hw/n;
+  const avgM=Math.round(margins.reduce((a,b)=>a+b,0)/n);
+  const avgH=Math.round(hss.reduce((a,b)=>a+b,0)/n);
+  const avgA=Math.round(ass.reduce((a,b)=>a+b,0)/n);
+  const bkts=Array(8).fill(0);
+  margins.forEach(m=>bkts[Math.min(7,Math.floor(m/15))]++);
+  return{hwp,awp:1-hwp,avgM,avgH,avgA,bkts,hs:Math.round(hs*10)/10,as:Math.round(as*10)/10};
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER CARDS
+// ═══════════════════════════════════════════════════════
+function getRoundData(){return FIXTURE[currentRound]}
+
+function buildMatchId(m,idx){return `m_${currentRound}_${idx}`}
+
+function renderCards(){
+  const rd=getRoundData();
+  const grid=document.getElementById('matchGrid');
+  grid.innerHTML='';
+  if(!rd){grid.innerHTML='<p style="color:var(--muted);padding:20px">No fixture data for this round yet.</p>';return;}
+  rd.matches.forEach((m,i)=>{
+    const id=buildMatchId(m,i);
+    const ht=TEAMS[m.h],at=TEAMS[m.a];
+    const hs=teamStr(m.h),as=teamStr(m.a);
+    const mxS=Math.max(hs,as,80);
+    const hInj=ht&&ht.players.filter(p=>p.out).length>0;
+    const aInj=at&&at.players.filter(p=>p.out).length>0;
+    const hasInj=hInj||aInj;
+    const card=document.createElement('div');
+    card.className='match-card';card.id=`card-${id}`;
+    card.innerHTML=`
+      <div class="card-venue">
+        <span class="venue-text">📍 ${m.venue}</span>
+        <div style="display:flex;gap:5px">
+          ${m.weather?`<span class="tag tag-wx">${m.weather}</span>`:''}
+          ${hasInj?`<span class="tag tag-inj">⚠ injuries</span>`:''}
+        </div>
+      </div>
+      <div class="teams-section">
+        <div class="matchup-row">
+          <div class="team-col">
+            <div class="team-name">${ht?ht.name:m.h}</div>
+            <div class="team-str">Str: <b style="color:var(--gold)">${hs.toFixed(1)}</b></div>
+          </div>
+          <span class="vs-badge">VS</span>
+          <div class="team-col away">
+            <div class="team-name">${at?at.name:m.a}</div>
+            <div class="team-str">Str: <b style="color:var(--info)">${as.toFixed(1)}</b></div>
+          </div>
+        </div>
+        <div class="str-bars">
+          <div class="str-wrap"><div class="str-fill h" id="sth-${id}" style="width:${(hs/mxS)*100}%"></div></div>
+          <span class="str-lbl">STR</span>
+          <div class="str-wrap"><div class="str-fill a" id="sta-${id}" style="width:${(as/mxS)*100}%"></div></div>
+        </div>
+      </div>
+      <div class="sim-action">
+        <button class="sim-btn" id="btn-${id}" onclick="simMatch('${id}','${m.h}','${m.a}',${m.hga},${m.h2h})">▶ Run Simulation</button>
+      </div>
+      <div class="results-panel" id="res-${id}"></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function showRes(id,ht,at,r){
+  const hn=TEAMS[ht]?TEAMS[ht].name:ht;
+  const an=TEAMS[at]?TEAMS[at].name:at;
+  const wname=r.hwp>=0.5?hn:an;
+  const wpct=r.hwp>=0.5?r.hwp:r.awp;
+  const conf=wpct>=0.72?{t:'High Confidence',c:'ch'}:wpct>=0.58?{t:'Moderate',c:'cm'}:{t:'Toss-Up',c:'cl'};
+  const maxB=Math.max(...r.bkts);
+  const dist=r.bkts.slice(0,5).map((b,i)=>{
+    const h=Math.max(2,Math.round((b/maxB)*36));
+    const op=0.3+(i/4)*0.7;
+    const col=r.hwp>=0.5?'#f0a500':'#52a4e0';
+    return`<div class="dist-col" style="height:${h}px;background:${col};opacity:${op}"></div>`;
+  }).join('');
+  const panel=document.getElementById(`res-${id}`);
+  panel.innerHTML=`
+    <div><span class="winner-name">${wname}</span><span class="winner-pct">wins ${(wpct*100).toFixed(1)}%</span></div>
+    <div class="proj-score">Proj: ${ht} ${r.avgH} – ${at} ${r.avgA} · Margin: ${r.avgM} pts</div>
+    <div class="prob-labels">
+      <span style="color:var(--gold)">${ht} ${(r.hwp*100).toFixed(0)}%</span>
+      <span style="color:var(--info)">${(r.awp*100).toFixed(0)}% ${at}</span>
+    </div>
+    <div class="prob-track">
+      <div class="prob-h" style="width:${r.hwp*100}%"></div>
+      <div class="prob-a" style="width:${r.awp*100}%"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" style="color:var(--gold)">${(r.hwp*100).toFixed(1)}%</div><div class="stat-lbl">${ht} win%</div></div>
+      <div class="stat-box"><div class="stat-val">${r.avgM}</div><div class="stat-lbl">avg margin</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--info)">${(r.awp*100).toFixed(1)}%</div><div class="stat-lbl">${at} win%</div></div>
+    </div>
+    <div class="dist-section">
+      <div class="dist-title">Margin distribution</div>
+      <div class="dist-bars">${dist}</div>
+      <div class="dist-rlbls"><span>0–15</span><span>15–30</span><span>30–45</span><span>45–60</span><span>60+</span></div>
+    </div>
+    <span class="conf-pill ${conf.c}">${conf.t}</span>
+  `;
+  panel.classList.add('show');
+  document.getElementById(`card-${id}`).classList.add('simulated');
+  const btn=document.getElementById(`btn-${id}`);
+  if(btn)btn.textContent='↺ Re-simulate';
+}
+
+function simMatch(id,ht,at,hga,h2h){
+  const btn=document.getElementById(`btn-${id}`);
+  if(btn){btn.textContent='⟳ Simulating…';btn.disabled=true;}
+  setTimeout(()=>{
+    const r=runSim({h:ht,a:at,hga,h2h});
+    simResults[id]={ht,at,r};
+    showRes(id,ht,at,r);
+    if(btn)btn.disabled=false;
+    updateSummary();
+  },60);
+}
+
+function runAllSims(){
+  const rd=getRoundData();if(!rd)return;
+  const btn=document.getElementById('runAllBtn');
+  btn.disabled=true;btn.textContent='⟳ Running…';
+  const pw=document.getElementById('progWrap'),pf=document.getElementById('progFill'),pl=document.getElementById('progLabel');
+  pw.classList.add('show');
+  let done=0;
+  rd.matches.forEach((m,i)=>{
+    setTimeout(()=>{
+      const id=buildMatchId(m,i);
+      simMatch(id,m.h,m.a,m.hga,m.h2h);
+      done++;
+      pf.style.width=`${(done/rd.matches.length)*100}%`;
+      pl.textContent=`Simulating ${done}/${rd.matches.length} matches…`;
+      if(done===rd.matches.length){
+        setTimeout(()=>{btn.disabled=false;btn.textContent='↺ Re-simulate All';pw.classList.remove('show');pf.style.width='0';},450);
+      }
+    },i*110);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function renderSettings(){
+  const grid=document.getElementById('settingsGrid');
+  grid.innerHTML='';
+  Object.entries(TEAMS).forEach(([short,team])=>{
+    const card=document.createElement('div');
+    card.className='s-card';
+    card.innerHTML=`
+      <div class="s-title">
+        <span>${team.name}</span>
+        <span style="font-size:10px;font-family:'DM Sans';color:var(--muted)">${short}</span>
+      </div>
+      <div class="adj-row"><label>Base rating</label>
+        <input class="adj-input" type="number" min="50" max="99" value="${team.baseRating}" onchange="TEAMS['${short}'].baseRating=+this.value;refreshCardStr()">
+      </div>
+      <div class="adj-row"><label>Form multiplier</label>
+        <input class="adj-input" type="number" min="0.7" max="1.3" step="0.01" value="${team.formMult}" onchange="TEAMS['${short}'].formMult=+this.value;refreshCardStr()">
+      </div>
+      <div class="psec-title">Players — click toggle to mark OUT</div>
+      <div class="player-list">${team.players.map((p,i)=>`
+        <div class="player-row">
+          <span class="p-pos">${p.pos}</span>
+          <span class="p-name">${p.n}</span>
+          <input class="p-rating" type="number" min="50" max="99" value="${p.r}" onchange="TEAMS['${short}'].players[${i}].r=+this.value;refreshCardStr()">
+          <button class="p-toggle ${p.out?'out':''}" id="pt_${short}_${i}" onclick="toggleP('${short}',${i})"></button>
+          <span class="p-lbl" id="pl_${short}_${i}">${p.out?'OUT':'FIT'}</span>
+        </div>`).join('')}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleP(short,idx){
+  TEAMS[short].players[idx].out=!TEAMS[short].players[idx].out;
+  const tog=document.getElementById(`pt_${short}_${idx}`);
+  const lbl=document.getElementById(`pl_${short}_${idx}`);
+  if(tog)tog.classList.toggle('out');
+  if(lbl)lbl.textContent=TEAMS[short].players[idx].out?'OUT':'FIT';
+  refreshCardStr();
+}
+
+function refreshCardStr(){
+  const rd=getRoundData();if(!rd)return;
+  rd.matches.forEach((m,i)=>{
+    const id=buildMatchId(m,i);
+    const hs=teamStr(m.h),as=teamStr(m.a);
+    const mx=Math.max(hs,as,80);
+    const card=document.getElementById(`card-${id}`);if(!card)return;
+    const bbs=card.querySelectorAll('.team-str b');
+    if(bbs[0])bbs[0].textContent=hs.toFixed(1);
+    if(bbs[1])bbs[1].textContent=as.toFixed(1);
+    const sh=document.getElementById(`sth-${id}`);
+    const sa=document.getElementById(`sta-${id}`);
+    if(sh)sh.style.width=`${(hs/mx)*100}%`;
+    if(sa)sa.style.width=`${(as/mx)*100}%`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// SUMMARY
+// ═══════════════════════════════════════════════════════
+function updateSummary(){
+  const tbody=document.getElementById('sumBody');
+  const keys=Object.keys(simResults);
+  if(!keys.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">Run simulations to see your tips.</td></tr>';return;}
+  tbody.innerHTML=keys.map(id=>{
+    const{ht,at,r}=simResults[id];
+    const hn=TEAMS[ht]?TEAMS[ht].name:ht,an=TEAMS[at]?TEAMS[at].name:at;
+    const wname=r.hwp>=0.5?hn:an,wpct=r.hwp>=0.5?r.hwp:r.awp;
+    const conf=wpct>=0.72?{t:'HIGH',c:'ch'}:wpct>=0.58?{t:'MED',c:'cm'}:{t:'TOSS-UP',c:'cl'};
+    return`<tr>
+      <td style="color:var(--muted);font-size:12px">${hn} vs ${an}</td>
+      <td><span class="tip-pill">${wname}</span></td>
+      <td><span style="font-size:13px">${(wpct*100).toFixed(1)}%</span>
+        <div class="mini-bar"><div class="mini-fill" style="width:${wpct*100}%"></div></div>
+      </td>
+      <td style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">${r.avgM} pts</td>
+      <td><span class="conf-pill ${conf.c}" style="font-size:10px;padding:2px 8px">${conf.t}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// LADDER / RATINGS
+// ═══════════════════════════════════════════════════════
+function renderLadder(){
+  const grid=document.getElementById('ladderGrid');
+  grid.innerHTML='';
+  const sorted=Object.entries(TEAMS).sort((a,b)=>{
+    const sa=teamStr(a[0]),sb=teamStr(b[0]);return sb-sa;
+  });
+  sorted.forEach(([short,team],rank)=>{
+    const str=teamStr(short).toFixed(1);
+    const active=team.players.filter(p=>!p.out).length;
+    const inj=team.players.filter(p=>p.out).length;
+    const card=document.createElement('div');
+    card.className='ladder-card';
+    card.innerHTML=`
+      <div class="club-row">
+        <div class="club-dot" style="background:${team.color}"></div>
+        <div>
+          <div class="club-name">${rank+1}. ${team.name}</div>
+          <div class="club-sub">${short} · ${inj>0?`<span style="color:var(--danger)">${inj} injured</span>`:'Full strength'}</div>
+        </div>
+      </div>
+      <div class="club-stats">
+        <div class="cs-box"><div class="cs-val" style="color:var(--gold)">${str}</div><div class="cs-lbl">Sim Str.</div></div>
+        <div class="cs-box"><div class="cs-val">${team.baseRating}</div><div class="cs-lbl">Base</div></div>
+        <div class="cs-box"><div class="cs-val">${(team.formMult*100).toFixed(0)}%</div><div class="cs-lbl">Form</div></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// NAV + ROUND SELECTOR
+// ═══════════════════════════════════════════════════════
+function showTab(name,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  el.classList.add('active');
+  if(name==='settings')renderSettings();
+  if(name==='summary')updateSummary();
+  if(name==='ladder')renderLadder();
+}
+
+function changeRound(val){
+  currentRound=val;
+  simResults={};
+  const rd=FIXTURE[val];
+  document.getElementById('roundBadge').textContent=rd?rd.label:'—';
+  renderCards();
+}
+
+function buildRoundSelector(){
+  const sel=document.getElementById('roundSel');
+  ROUND_KEYS.forEach(k=>{
+    const rd=FIXTURE[k];if(!rd)return;
+    const opt=document.createElement('option');
+    opt.value=k;opt.textContent=`${rd.label} — ${rd.dates}`;
+    if(k===currentRound)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+// BOOT
+buildRoundSelector();
+document.getElementById('roundBadge').textContent=FIXTURE[currentRound].label;
+renderCards();
+</script>
+</body>
+</html>
