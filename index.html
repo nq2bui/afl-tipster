@@ -795,7 +795,29 @@ const FIXTURE = {
 };
 
 const ROUND_KEYS = ["OR","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"];
-let currentRound = "None";
+
+function detectCurrentRound() {
+  const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (const key of ROUND_KEYS) {
+    const rd = FIXTURE[key]; if (!rd) continue;
+    const dates = rd.dates;
+    let endDay, endMonth;
+    // Cross-month range e.g. "30 Apr–3 May"
+    const cross = dates.match(/\d+\s+\w+[–\-]\s*(\d+)\s+(\w+)/);
+    if (cross) { endDay = parseInt(cross[1]); endMonth = MONTHS[cross[2]]; }
+    else {
+      // Same-month range e.g. "19–22 Mar"
+      const same = dates.match(/\d+[–\-](\d+)\s+(\w+)/);
+      if (same) { endDay = parseInt(same[1]); endMonth = MONTHS[same[2]]; }
+    }
+    if (endDay === undefined) continue;
+    if (today <= new Date(2026, endMonth, endDay)) return key;
+  }
+  return ROUND_KEYS[ROUND_KEYS.length - 1];
+}
+
+let currentRound = detectCurrentRound();
 let simResults = {};
 
 // ═══════════════════════════════════════════════════════

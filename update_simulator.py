@@ -220,15 +220,6 @@ def patch_index_html(round_num, round_games, standings, injured_map):
             else:
                 print(f"  (no roster match for {short}:{surname})")
 
-    # ── 4. Update the default selected round to the current upcoming round ──
-    if round_num is not None:
-        round_str = str(round_num) if round_num != 0 else "OR"
-        pattern = r'(let currentRound = )"[^"]*"'
-        new_html = re.sub(pattern, f'\\1"{round_str}"', html, count=1)
-        if new_html != html:
-            html = new_html
-            print(f"  Set default round to {round_str}")
-
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
 
