@@ -265,14 +265,25 @@ def patch_index_html(round_num, round_games, standings, injured_map):
     with open("index.html", "r", encoding="utf-8") as f:
         html = f.read()
 
-    # ── 1. Update formMult for each team based on live standings ──
-    for short, standing in standings.items():
+    # ── 1. Update formMult and ladder standings for each team ──
+    for short, s in standings.items():
+        # formMult
         new_mult = calculate_form_mult(standings, short)
-        pattern = rf'({re.escape(short)}:{{[^}}]*?baseRating:\d+,formMult:)[\d\.]+'
+        pattern = rf'({re.escape(short)}:{{[^[]*?formMult:)[\d\.]+'
         new_html = re.sub(pattern, rf'\g<1>{new_mult}', html, count=1)
         if new_html != html:
             html = new_html
             print(f"  Updated {short} formMult -> {new_mult}")
+        # wins / losses / pct / rank (stored in TEAMS for the ladder table)
+        header_pat = re.compile(rf'{re.escape(short)}:{{([^[]+)players:\[', re.DOTALL)
+        m = header_pat.search(html)
+        if m:
+            hdr = m.group(1)
+            hdr = re.sub(r'\bwins:\d+', f'wins:{s["wins"]}', hdr)
+            hdr = re.sub(r'\blosses:\d+', f'losses:{s["losses"]}', hdr)
+            hdr = re.sub(r'\bpct:[\d.]+', f'pct:{s["percentage"]}', hdr)
+            hdr = re.sub(r'\brank:\d+', f'rank:{s["rank"]}', hdr)
+            html = html[:m.start(1)] + hdr + html[m.end(1):]
 
     # ── 2. Reset all player out flags to false ──
     html = re.sub(r'(,out:)true', r'\1false', html)

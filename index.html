@@ -154,17 +154,29 @@ main{position:relative;z-index:5;padding:22px 24px}
 .mini-fill{height:100%;background:var(--gold);border-radius:3px}
 .empty-state{text-align:center;padding:36px;color:var(--muted);font-size:13px}
 
-/* LADDER */
-.ladder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.ladder-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:12px 14px}
-.club-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.club-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.club-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white)}
-.club-sub{font-size:11px;color:var(--muted);margin-top:1px}
-.club-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
-.cs-box{background:var(--surface);border-radius:6px;padding:5px;text-align:center}
-.cs-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white)}
-.cs-lbl{font-size:9px;color:var(--muted)}
+/* LADDER TABLE */
+.ladder-wrap{overflow-x:auto}
+.ladder-table{width:100%;border-collapse:collapse;font-size:13px}
+.ladder-table thead th{padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.04em;border-bottom:2px solid var(--cb);white-space:nowrap;cursor:pointer;user-select:none}
+.ladder-table thead th:nth-child(2){text-align:left}
+.ladder-table thead th:hover{color:var(--white)}
+.ladder-table tbody tr{border-bottom:1px solid var(--line);transition:background .12s}
+.ladder-table tbody tr:hover{background:var(--surface3)}
+.ladder-table td{padding:9px 10px;text-align:center;vertical-align:middle}
+.ladder-table td:nth-child(2){text-align:left}
+.ldr-afl-rank{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--muted);width:34px}
+.ldr-team-cell .ldr-team{display:flex;align-items:center;gap:8px}
+.ldr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ldr-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white)}
+.ldr-num{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ldr-rating{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--gold)}
+.ldr-sim-rank{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--white)}
+.ldr-delta{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700}
+.ldr-delta-pos{color:#22c55e}
+.ldr-delta-neg{color:#ef4444}
+.ldr-delta-neu{color:var(--muted)}
+.ldr-inj{font-size:12px}
+.ldr-top8 td:first-child{border-left:3px solid var(--gold)}
 
 footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -257,7 +269,7 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
   </div>
 
   <div class="tab-panel" id="tab-ladder">
-    <div class="ladder-grid" id="ladderGrid"></div>
+    <div class="ladder-wrap"><div id="ladderGrid"></div></div>
   </div>
 
   <div class="tab-panel" id="tab-accuracy">
@@ -439,92 +451,92 @@ const PLAYER_IMGS = {
 };
 
 const TEAMS = {
-  ADE:{name:"Adelaide",color:"#002B5C",baseRating:81,formMult:1.06,players:[
+  ADE:{name:"Adelaide",color:"#002B5C",baseRating:81,formMult:1.06,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"R. Thilthorpe",r:85,pos:"FWD",out:false},{n:"I. Rankine",r:86,pos:"FWD",out:false},
     {n:"W. Milera",r:82,pos:"DEF",out:false},{n:"J. Worrell",r:81,pos:"DEF",out:false},
     {n:"C. Ah Chee",r:79,pos:"FWD",out:false},{n:"D. Fogarty",r:80,pos:"FWD",out:false},
     {n:"J. Dawson",r:78,pos:"MID",out:false},{n:"B. Keays",r:79,pos:"MID",out:false}]},
-  BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.02,players:[
+  BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.02,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"L. Neale",r:89,pos:"MID",out:false},{n:"D. Zorko",r:82,pos:"MID",out:false},
     {n:"H. McCluggage",r:84,pos:"MID",out:false},{n:"Z. Bailey",r:83,pos:"MID",out:true},
     {n:"J. Dunkley",r:82,pos:"MID",out:false},{n:"E. Hipwood",r:80,pos:"FWD",out:true},
     {n:"C. Cameron",r:82,pos:"FWD",out:false},{n:"D. Fort",r:78,pos:"RCK",out:false}]},
-  CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,players:[
+  CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"P. Cripps",r:88,pos:"MID",out:false},{n:"H. McKay",r:82,pos:"FWD",out:false},
     {n:"S. Walsh",r:85,pos:"MID",out:false},{n:"L. Fogarty",r:78,pos:"MID",out:false},
     {n:"M. Cottrell",r:79,pos:"FWD",out:true},{n:"A. Saad",r:80,pos:"DEF",out:true},
     {n:"M. Pittonet",r:78,pos:"RCK",out:false},{n:"G. Hewett",r:79,pos:"MID",out:false}]},
-  COL:{name:"Collingwood",color:"#000000",baseRating:82,formMult:0.97,players:[
+  COL:{name:"Collingwood",color:"#000000",baseRating:82,formMult:0.97,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"N. Daicos",r:92,pos:"MID",out:false},{n:"J. Daicos",r:86,pos:"MID",out:false},
     {n:"B. McCreery",r:82,pos:"FWD",out:false},{n:"S. Pendlebury",r:81,pos:"MID",out:false},
     {n:"J. Crisp",r:82,pos:"MID",out:false},{n:"D. Moore",r:83,pos:"FWD",out:false},
     {n:"B. Frampton",r:79,pos:"DEF",out:false},{n:"B. Maynard",r:82,pos:"DEF",out:false}]},
-  ESS:{name:"Essendon",color:"#CC2031",baseRating:74,formMult:0.91,players:[
+  ESS:{name:"Essendon",color:"#CC2031",baseRating:74,formMult:0.91,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"Z. Merrett",r:85,pos:"MID",out:false},{n:"D. Parish",r:82,pos:"MID",out:false},
     {n:"N. Martin",r:78,pos:"MID",out:true},{n:"K. Langford",r:79,pos:"FWD",out:false},
     {n:"X. Duursma",r:79,pos:"MID",out:false},{n:"A. McGrath",r:78,pos:"DEF",out:false},
     {n:"P. Wright",r:78,pos:"FWD",out:false},{n:"M. Redman",r:78,pos:"DEF",out:false}]},
-  FRE:{name:"Fremantle",color:"#2A1A5E",baseRating:81,formMult:1.08,players:[
+  FRE:{name:"Fremantle",color:"#2A1A5E",baseRating:81,formMult:1.08,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"A. Brayshaw",r:85,pos:"MID",out:false},{n:"C. Serong",r:84,pos:"MID",out:false},
     {n:"S. Darcy",r:83,pos:"RCK",out:false},{n:"L. Jackson",r:82,pos:"RCK",out:false},
     {n:"M. Johnson",r:80,pos:"FWD",out:false},{n:"H. Young",r:79,pos:"MID",out:false},
     {n:"L. Ryan",r:78,pos:"DEF",out:false},{n:"A. Pearce",r:80,pos:"DEF",out:false}]},
-  GEE:{name:"Geelong",color:"#1C3C63",baseRating:84,formMult:1.05,players:[
+  GEE:{name:"Geelong",color:"#1C3C63",baseRating:84,formMult:1.05,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"J. Cameron",r:88,pos:"FWD",out:false},{n:"P. Dangerfield",r:88,pos:"MID",out:false},
     {n:"B. Smith",r:83,pos:"MID",out:false},{n:"T. Atkins",r:82,pos:"MID",out:false},
     {n:"Z. Guthrie",r:81,pos:"MID",out:false},{n:"M. Holmes",r:83,pos:"MID",out:false},
     {n:"T. Stewart",r:82,pos:"DEF",out:false},{n:"S. De Koning",r:80,pos:"RCK",out:false}]},
-  GCS:{name:"Gold Coast",color:"#CC2031",baseRating:80,formMult:1.09,players:[
+  GCS:{name:"Gold Coast",color:"#CC2031",baseRating:80,formMult:1.09,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"T. Miller",r:87,pos:"MID",out:false},{n:"M. Rowell",r:86,pos:"MID",out:true},
     {n:"N. Anderson",r:85,pos:"MID",out:false},{n:"B. King",r:83,pos:"FWD",out:false},
     {n:"C. Petracca",r:87,pos:"MID",out:false},{n:"J. Walter",r:78,pos:"FWD",out:false},
     {n:"W. Powell",r:79,pos:"DEF",out:false},{n:"J. Ugle-Hagan",r:80,pos:"FWD",out:false}]},
-  GWS:{name:"GWS Giants",color:"#FF7900",baseRating:79,formMult:1.05,players:[
+  GWS:{name:"GWS Giants",color:"#FF7900",baseRating:79,formMult:1.05,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"L. Whitfield",r:83,pos:"MID",out:false},{n:"T. Green",r:82,pos:"MID",out:true},
     {n:"C. Oliver",r:86,pos:"MID",out:false},{n:"T. Greene",r:83,pos:"FWD",out:false},
     {n:"S. Taylor",r:85,pos:"DEF",out:true},{n:"J. Kelly",r:84,pos:"MID",out:false},
     {n:"B. Daniels",r:80,pos:"FWD",out:true},{n:"H. Himmelberg",r:78,pos:"FWD",out:false}]},
-  HAW:{name:"Hawthorn",color:"#4D2004",baseRating:82,formMult:1.10,players:[
+  HAW:{name:"Hawthorn",color:"#4D2004",baseRating:82,formMult:1.10,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"J. Ward",r:86,pos:"MID",out:false},{n:"J. Newcombe",r:84,pos:"MID",out:false},
     {n:"J. Gunston",r:81,pos:"FWD",out:false},{n:"J. Sicily",r:83,pos:"DEF",out:false},
     {n:"C. Nash",r:80,pos:"MID",out:false},{n:"K. Amon",r:79,pos:"DEF",out:false},
     {n:"L. Meek",r:78,pos:"RCK",out:false},{n:"J. Impey",r:78,pos:"DEF",out:false}]},
-  MEL:{name:"Melbourne",color:"#CC2031",baseRating:78,formMult:1.04,players:[
+  MEL:{name:"Melbourne",color:"#CC2031",baseRating:78,formMult:1.04,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"M. Gawn",r:88,pos:"RCK",out:false},{n:"J. Steele",r:80,pos:"MID",out:false},
     {n:"J. Viney",r:80,pos:"MID",out:false},{n:"K. Pickett",r:81,pos:"FWD",out:false},
     {n:"B. Fritsch",r:80,pos:"FWD",out:false},{n:"J. Lever",r:80,pos:"DEF",out:false},
     {n:"J. Bowey",r:79,pos:"DEF",out:true},{n:"T. McDonald",r:78,pos:"FWD",out:false}]},
-  NTH:{name:"North Melbourne",color:"#013B9F",baseRating:74,formMult:1.10,players:[
+  NTH:{name:"North Melbourne",color:"#013B9F",baseRating:74,formMult:1.10,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"H. Sheezel",r:86,pos:"DEF",out:false},{n:"L. Davies-Uniacke",r:84,pos:"MID",out:false},
     {n:"C. McKercher",r:83,pos:"MID",out:false},{n:"N. Larkey",r:80,pos:"FWD",out:false},
     {n:"L. Parker",r:79,pos:"MID",out:false},{n:"T. Powell",r:79,pos:"MID",out:false},
     {n:"B. Scott",r:77,pos:"MID",out:false},{n:"J. Simpkin",r:80,pos:"MID",out:false}]},
-  POR:{name:"Port Adelaide",color:"#008AAB",baseRating:78,formMult:0.94,players:[
+  POR:{name:"Port Adelaide",color:"#008AAB",baseRating:78,formMult:0.94,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"Z. Butters",r:85,pos:"MID",out:false},{n:"O. Wines",r:84,pos:"MID",out:true},
     {n:"C. Rozee",r:83,pos:"MID",out:false},{n:"J. Horne-Francis",r:82,pos:"MID",out:false},
     {n:"W. Drew",r:78,pos:"MID",out:false},{n:"T. Marshall",r:79,pos:"FWD",out:false},
     {n:"S. Powell-Pepper",r:79,pos:"MID",out:true},{n:"M. Georgiades",r:78,pos:"FWD",out:false}]},
-  RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.96,players:[
+  RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.96,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"T. Taranto",r:82,pos:"MID",out:false},{n:"N. Vlastuin",r:82,pos:"DEF",out:false},
     {n:"T. Lynch",r:79,pos:"FWD",out:false},{n:"D. Prestia",r:78,pos:"MID",out:false},
     {n:"T. Nankervis",r:76,pos:"RCK",out:false},{n:"J. Hopper",r:80,pos:"MID",out:false},
     {n:"M. Rioli",r:76,pos:"FWD",out:false},{n:"J. Short",r:79,pos:"DEF",out:false}]},
-  STK:{name:"St Kilda",color:"#ED0F05",baseRating:76,formMult:0.95,players:[
+  STK:{name:"St Kilda",color:"#ED0F05",baseRating:76,formMult:0.95,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"R. Marshall",r:83,pos:"RCK",out:false},{n:"J. Higgins",r:82,pos:"FWD",out:false},
     {n:"M. Wood",r:79,pos:"MID",out:false},{n:"T. De Koning",r:80,pos:"RCK",out:false},
     {n:"S. Flanders",r:80,pos:"FWD",out:false},{n:"M. Phillipou",r:81,pos:"FWD",out:false},
     {n:"L. Ryan",r:78,pos:"FWD",out:false},{n:"J. Macrae",r:83,pos:"MID",out:true}]},
-  SYD:{name:"Sydney Swans",color:"#ED171F",baseRating:84,formMult:1.02,players:[
+  SYD:{name:"Sydney Swans",color:"#ED171F",baseRating:84,formMult:1.02,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"E. Gulden",r:92,pos:"MID",out:true},{n:"I. Heeney",r:90,pos:"MID",out:false},
     {n:"C. Curnow",r:87,pos:"FWD",out:false},{n:"C. Mills",r:85,pos:"MID",out:false},
     {n:"N. Blakey",r:82,pos:"DEF",out:false},{n:"J. McInerney",r:80,pos:"MID",out:false},
     {n:"J. Amartey",r:79,pos:"FWD",out:false},{n:"B. Grundy",r:80,pos:"RCK",out:false}]},
-  WBD:{name:"W. Bulldogs",color:"#014896",baseRating:83,formMult:1.08,players:[
+  WBD:{name:"W. Bulldogs",color:"#014896",baseRating:83,formMult:1.08,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"M. Bontempelli",r:94,pos:"MID",out:false},{n:"A. Treloar",r:83,pos:"MID",out:false},
     {n:"A. Naughton",r:85,pos:"FWD",out:false},{n:"S. Darcy",r:83,pos:"RCK",out:false},
     {n:"E. Richards",r:82,pos:"DEF",out:false},{n:"T. Liberatore",r:81,pos:"MID",out:false},
     {n:"T. English",r:82,pos:"RCK",out:false},{n:"J. Freijah",r:79,pos:"MID",out:false}]},
-  WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.90,players:[
+  WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.90,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"E. Yeo",r:83,pos:"MID",out:false},{n:"T. Kelly",r:80,pos:"MID",out:false},
     {n:"H. Reid",r:82,pos:"MID",out:false},{n:"D. Robertson",r:79,pos:"FWD",out:false},
     {n:"B. Williams",r:74,pos:"FWD",out:true},{n:"H. Edwards",r:73,pos:"DEF",out:false},
@@ -1160,31 +1172,70 @@ function updateSummary(){
 function renderLadder(){
   const grid=document.getElementById('ladderGrid');
   grid.innerHTML='';
-  const sorted=Object.entries(TEAMS).sort((a,b)=>{
-    const sa=teamStr(a[0]),sb=teamStr(b[0]);return sb-sa;
+
+  // Build entry list with sim ratings
+  const entries=Object.entries(TEAMS).map(([short,team])=>({
+    short,team,str:teamStr(short),inj:team.players.filter(p=>p.out).length
+  }));
+
+  // Assign sim ranks (1 = highest rating)
+  [...entries].sort((a,b)=>b.str-a.str).forEach((e,i)=>e.simRank=i+1);
+
+  // Use real AFL ladder rank if standings are available (any team has played)
+  const hasStandings=entries.some(e=>e.team.wins>0||e.team.losses>0);
+  if(hasStandings){
+    entries.sort((a,b)=>(a.team.rank||99)-(b.team.rank||99));
+  } else {
+    entries.sort((a,b)=>a.simRank-b.simRank);
+  }
+
+  const table=document.createElement('table');
+  table.className='ladder-table';
+  const sortLabel=hasStandings?'AFL #':'Sim #';
+  table.innerHTML=`<thead><tr>
+    <th title="AFL ladder position">${sortLabel}</th>
+    <th style="text-align:left">Club</th>
+    <th title="Wins">W</th>
+    <th title="Losses">L</th>
+    <th title="Percentage">%</th>
+    <th title="Players injured/out">Inj</th>
+    <th title="Simulator strength rating">Rating</th>
+    <th title="Simulator ranking">Sim #</th>
+    <th title="AFL rank minus Sim rank (+ means sim rates higher)">Δ</th>
+  </tr></thead>`;
+
+  const tbody=document.createElement('tbody');
+  entries.forEach((e,i)=>{
+    const aflRank=hasStandings?(e.team.rank||'–'):'–';
+    const delta=hasStandings?((e.team.rank||0)-e.simRank):null;
+    let deltaHtml='<span class="ldr-delta-neu">–</span>';
+    if(delta!==null){
+      if(delta>0) deltaHtml=`<span class="ldr-delta ldr-delta-pos">+${delta}</span>`;
+      else if(delta<0) deltaHtml=`<span class="ldr-delta ldr-delta-neg">${delta}</span>`;
+      else deltaHtml=`<span class="ldr-delta ldr-delta-neu">=</span>`;
+    }
+    const injHtml=e.inj>0
+      ?`<span class="ldr-inj" style="color:var(--danger)">${e.inj}</span>`
+      :`<span class="ldr-inj" style="color:var(--muted)">–</span>`;
+    const tr=document.createElement('tr');
+    if(hasStandings&&(e.team.rank||99)<=8) tr.className='ldr-top8';
+    tr.innerHTML=`
+      <td class="ldr-afl-rank">${aflRank}</td>
+      <td class="ldr-team-cell"><div class="ldr-team">
+        <div class="ldr-dot" style="background:${e.team.color}"></div>
+        <span class="ldr-name">${e.team.name}</span>
+      </div></td>
+      <td class="ldr-num">${e.team.wins}</td>
+      <td class="ldr-num">${e.team.losses}</td>
+      <td class="ldr-num">${e.team.pct.toFixed(1)}</td>
+      <td>${injHtml}</td>
+      <td class="ldr-rating">${e.str.toFixed(1)}</td>
+      <td class="ldr-sim-rank">${e.simRank}</td>
+      <td>${deltaHtml}</td>`;
+    tbody.appendChild(tr);
   });
-  sorted.forEach(([short,team],rank)=>{
-    const str=teamStr(short).toFixed(1);
-    const active=team.players.filter(p=>!p.out).length;
-    const inj=team.players.filter(p=>p.out).length;
-    const card=document.createElement('div');
-    card.className='ladder-card';
-    card.innerHTML=`
-      <div class="club-row">
-        <div class="club-dot" style="background:${team.color}"></div>
-        <div>
-          <div class="club-name">${rank+1}. ${team.name}</div>
-          <div class="club-sub">${short} · ${inj>0?`<span style="color:var(--danger)">${inj} injured</span>`:'Full strength'}</div>
-        </div>
-      </div>
-      <div class="club-stats">
-        <div class="cs-box"><div class="cs-val" style="color:var(--gold)">${str}</div><div class="cs-lbl">Sim Str.</div></div>
-        <div class="cs-box"><div class="cs-val">${team.baseRating}</div><div class="cs-lbl">Base</div></div>
-        <div class="cs-box"><div class="cs-val">${(team.formMult*100).toFixed(0)}%</div><div class="cs-lbl">Form</div></div>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
+  table.appendChild(tbody);
+  grid.appendChild(table);
 }
 
 // ═══════════════════════════════════════════════════════
