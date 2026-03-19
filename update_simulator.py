@@ -127,7 +127,7 @@ def fetch_footywire_injuries():
 
     # Valid return values always contain a digit or a known keyword
     valid_return = re.compile(
-        r'\d|indefinite|season|mid.season|plus', re.IGNORECASE
+        r'\d|indefinite|season|mid.season|plus|test', re.IGNORECASE
     )
 
     for row in rows:
@@ -153,10 +153,9 @@ def fetch_footywire_injuries():
         if name.lower() == "player":
             continue
 
-        # Skip fitness test players — uncertain whether they'll play
+        # Count fitness test players (no longer skipped — marked OUT until confirmed fit)
         if returning.strip().lower() == "test":
             skipped_test += 1
-            continue
 
         # Validate returning looks like real injury data (contains digit or known keyword)
         if not valid_return.search(returning):
@@ -173,7 +172,7 @@ def fetch_footywire_injuries():
 
     total = sum(len(v) for v in injured_map.values())
     print(f"  FootyWire: {total} players out across {len(injured_map)} teams "
-          f"(skipped {skipped_test} fitness-test players)")
+          f"(includes {skipped_test} fitness-test players)")
     if total > 0:
         for team, names in sorted(injured_map.items()):
             print(f"    {team}: {', '.join(names)}")

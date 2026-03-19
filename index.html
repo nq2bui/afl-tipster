@@ -446,7 +446,7 @@ const TEAMS = {
     {n:"J. Dawson",r:78,pos:"MID",out:false},{n:"B. Keays",r:79,pos:"MID",out:false}]},
   BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.02,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"L. Neale",r:89,pos:"MID",out:false},{n:"D. Zorko",r:82,pos:"MID",out:false},
-    {n:"H. McCluggage",r:84,pos:"MID",out:false},{n:"Z. Bailey",r:83,pos:"MID",out:true},
+    {n:"H. McCluggage",r:84,pos:"MID",out:true},{n:"Z. Bailey",r:83,pos:"MID",out:true},
     {n:"J. Dunkley",r:82,pos:"MID",out:false},{n:"E. Hipwood",r:80,pos:"FWD",out:true},
     {n:"C. Cameron",r:82,pos:"FWD",out:false},{n:"D. Fort",r:78,pos:"RCK",out:false}]},
   CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,wins:0,losses:0,pct:100.0,rank:9,players:[
@@ -457,7 +457,7 @@ const TEAMS = {
   COL:{name:"Collingwood",color:"#000000",baseRating:82,formMult:0.97,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"N. Daicos",r:92,pos:"MID",out:false},{n:"J. Daicos",r:86,pos:"MID",out:false},
     {n:"B. McCreery",r:82,pos:"FWD",out:false},{n:"S. Pendlebury",r:81,pos:"MID",out:false},
-    {n:"J. Crisp",r:82,pos:"MID",out:false},{n:"D. Moore",r:83,pos:"FWD",out:false},
+    {n:"J. Crisp",r:82,pos:"MID",out:false},{n:"D. Moore",r:83,pos:"FWD",out:true},
     {n:"B. Frampton",r:79,pos:"DEF",out:false},{n:"B. Maynard",r:82,pos:"DEF",out:false}]},
   ESS:{name:"Essendon",color:"#CC2031",baseRating:74,formMult:0.91,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"Z. Merrett",r:85,pos:"MID",out:false},{n:"D. Parish",r:82,pos:"MID",out:false},
@@ -483,7 +483,7 @@ const TEAMS = {
     {n:"L. Whitfield",r:83,pos:"MID",out:false},{n:"T. Green",r:82,pos:"MID",out:true},
     {n:"C. Oliver",r:86,pos:"MID",out:false},{n:"T. Greene",r:83,pos:"FWD",out:false},
     {n:"S. Taylor",r:85,pos:"DEF",out:true},{n:"J. Kelly",r:84,pos:"MID",out:false},
-    {n:"B. Daniels",r:80,pos:"FWD",out:true},{n:"H. Himmelberg",r:78,pos:"FWD",out:false}]},
+    {n:"B. Daniels",r:80,pos:"FWD",out:true},{n:"H. Himmelberg",r:78,pos:"FWD",out:true}]},
   HAW:{name:"Hawthorn",color:"#4D2004",baseRating:82,formMult:1.10,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"J. Ward",r:86,pos:"MID",out:false},{n:"J. Newcombe",r:84,pos:"MID",out:false},
     {n:"J. Gunston",r:81,pos:"FWD",out:false},{n:"J. Sicily",r:83,pos:"DEF",out:false},
@@ -510,24 +510,24 @@ const TEAMS = {
     {n:"T. Nankervis",r:76,pos:"RCK",out:false},{n:"J. Hopper",r:80,pos:"MID",out:false},
     {n:"M. Rioli",r:76,pos:"FWD",out:false},{n:"J. Short",r:79,pos:"DEF",out:false}]},
   STK:{name:"St Kilda",color:"#ED0F05",baseRating:76,formMult:0.95,wins:0,losses:0,pct:100.0,rank:9,players:[
-    {n:"R. Marshall",r:83,pos:"RCK",out:false},{n:"J. Higgins",r:82,pos:"FWD",out:false},
+    {n:"R. Marshall",r:83,pos:"RCK",out:true},{n:"J. Higgins",r:82,pos:"FWD",out:false},
     {n:"M. Wood",r:79,pos:"MID",out:false},{n:"T. De Koning",r:80,pos:"RCK",out:false},
-    {n:"S. Flanders",r:80,pos:"FWD",out:false},{n:"M. Phillipou",r:81,pos:"FWD",out:false},
-    {n:"L. Ryan",r:78,pos:"FWD",out:false},{n:"J. Macrae",r:83,pos:"MID",out:true}]},
+    {n:"S. Flanders",r:80,pos:"FWD",out:false},{n:"M. Phillipou",r:81,pos:"FWD",out:true},
+    {n:"L. Ryan",r:78,pos:"FWD",out:true},{n:"J. Macrae",r:83,pos:"MID",out:true}]},
   SYD:{name:"Sydney Swans",color:"#ED171F",baseRating:84,formMult:1.02,wins:0,losses:0,pct:100.0,rank:9,players:[
-    {n:"E. Gulden",r:92,pos:"MID",out:true},{n:"I. Heeney",r:90,pos:"MID",out:false},
+    {n:"E. Gulden",r:92,pos:"MID",out:true},{n:"I. Heeney",r:90,pos:"MID",out:true},
     {n:"C. Curnow",r:87,pos:"FWD",out:false},{n:"C. Mills",r:85,pos:"MID",out:false},
     {n:"N. Blakey",r:82,pos:"DEF",out:false},{n:"J. McInerney",r:80,pos:"MID",out:false},
     {n:"J. Amartey",r:79,pos:"FWD",out:false},{n:"B. Grundy",r:80,pos:"RCK",out:false}]},
   WBD:{name:"W. Bulldogs",color:"#014896",baseRating:83,formMult:1.08,wins:0,losses:0,pct:100.0,rank:9,players:[
-    {n:"M. Bontempelli",r:94,pos:"MID",out:false},{n:"A. Treloar",r:83,pos:"MID",out:false},
+    {n:"M. Bontempelli",r:94,pos:"MID",out:false},{n:"A. Treloar",r:83,pos:"MID",out:true},
     {n:"A. Naughton",r:85,pos:"FWD",out:false},{n:"S. Darcy",r:83,pos:"RCK",out:false},
     {n:"E. Richards",r:82,pos:"DEF",out:false},{n:"T. Liberatore",r:81,pos:"MID",out:false},
     {n:"T. English",r:82,pos:"RCK",out:false},{n:"J. Freijah",r:79,pos:"MID",out:false}]},
   WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.90,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"E. Yeo",r:83,pos:"MID",out:false},{n:"T. Kelly",r:80,pos:"MID",out:false},
     {n:"H. Reid",r:82,pos:"MID",out:false},{n:"D. Robertson",r:79,pos:"FWD",out:false},
-    {n:"B. Williams",r:74,pos:"FWD",out:true},{n:"H. Edwards",r:73,pos:"DEF",out:false},
+    {n:"B. Williams",r:74,pos:"FWD",out:true},{n:"H. Edwards",r:73,pos:"DEF",out:true},
     {n:"L. Duggan",r:78,pos:"DEF",out:false},{n:"J. Waterman",r:73,pos:"FWD",out:false}]},
 };
 
