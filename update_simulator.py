@@ -1,21 +1,19 @@
 """
 AFL Footy Tipster — Weekly Auto-Updater
-Fetches live AFL data from the free Squiggle API and uses Claude AI
-to analyse the latest injury news, then patches index.html automatically.
+Fetches live AFL data from the free Squiggle API and scrapes the AFL injury
+news page to patch index.html automatically.
 """
 
 import requests
-import json
 import re
 import os
-import anthropic
 from datetime import datetime
 
 # ── CONFIG ──────────────────────────────────────────────────────────────────
 SQUIGGLE_BASE = "https://api.squiggle.com.au/"
 SQUIGGLE_HEADERS = {"User-Agent": "AFL-Tipster-Bot/1.0 (github.com/your-username/afl-tipster)"}
 YEAR = 2026
-AFL_INJURY_URL = "https://www.afl.com.au/matches/injury-list"
+AFL_INJURY_NEWS_URL = "https://www.afl.com.au/news/injury-news"
 
 # Map Squiggle team names → our short codes
 TEAM_NAME_MAP = {
@@ -27,6 +25,40 @@ TEAM_NAME_MAP = {
     "St Kilda": "STK", "Sydney": "SYD", "Sydney Swans": "SYD",
     "West Coast": "WCE", "Western Bulldogs": "WBD",
 }
+
+# Map AFL injury page image filename keywords → our short codes
+# Each team section has a banner image whose filename contains a unique keyword.
+# ORDER MATTERS: more specific keywords must come before substrings they contain
+# (e.g. "north-melbourne" before "melbourne", "port-adelaide" before "adelaide").
+# Fallback: expected AFL team order (alphabetical, as AFL.com.au lists them).
+# Used when a team section has no detectable banner image.
+TEAM_ORDER_FALLBACK = [
+    "ADE","BRI","CAR","COL","ESS","FRE","GEE","GCS","GWS",
+    "HAW","MEL","NTH","POR","RIC","STK","SYD","WCE","WBD",
+]
+
+IMG_KEYWORD_MAP = [
+    ("north-melbourne", "NTH"),   # must precede "melbourne"
+    ("port-adelaide",   "POR"),   # must precede "adelaide"
+    ("western-bulldog", "WBD"),   # must precede "west-coast"
+    ("west-coast",      "WCE"),
+    ("gc-",             "GCS"),   # Gold Coast slug e.g. gc-strap-new-logo
+    ("gold-coast",      "GCS"),
+    ("gws",             "GWS"),
+    ("stk-",            "STK"),   # St Kilda slug e.g. stk-strap-new-logo
+    ("st-kilda",        "STK"),
+    ("collingwood",     "COL"),
+    ("brisbane",        "BRI"),
+    ("carlton",         "CAR"),
+    ("essendon",        "ESS"),
+    ("fremantle",       "FRE"),
+    ("geelong",         "GEE"),
+    ("hawthorn",        "HAW"),
+    ("melbourne",       "MEL"),
+    ("richmond",        "RIC"),
+    ("sydney",          "SYD"),
+    ("adelaide",        "ADE"),   # last — only after port-adelaide already matched
+]
 
 def squiggle_get(query_params):
     """Fetch data from the Squiggle API."""
@@ -46,7 +78,6 @@ def get_current_round():
         return None, None
 
     games = data["games"]
-    now = datetime.utcnow()
 
     # Find the earliest round with games not yet complete
     upcoming = [g for g in games if g.get("complete", 100) < 100]
@@ -78,92 +109,96 @@ def get_standings():
             }
     return standings
 
-def get_power_rankings():
-    """Fetch Squiggle power rankings to adjust team ratings."""
-    data = squiggle_get(f"standings;year={YEAR}")
-    if not data or "standings" not in data:
-        return {}
-    rankings = {}
-    # Use percentage as a proxy for current form adjustment
-    for team in data["standings"]:
-        short = TEAM_NAME_MAP.get(team.get("name", ""), None)
-        if short:
-            pct = team.get("percentage", 100)
-            # Convert percentage to a form multiplier: 100% → 1.00, 120% → 1.06, 80% → 0.94
-            mult = round(0.6 + (pct / 1000), 3)
-            mult = max(0.82, min(1.18, mult))  # clamp between 0.82 and 1.18
-            rankings[short] = mult
-    return rankings
+def _img_filename_to_code(filename):
+    """Map a banner image filename to a team short code."""
+    fn = filename.lower()
+    for keyword, code in IMG_KEYWORD_MAP:
+        if keyword in fn:
+            return code
+    return None
 
-def fetch_injury_news():
-    """Fetch AFL injury list page and extract raw text."""
+def fetch_afl_injuries():
+    """Scrape AFL injury news page and return {team_code: [surnames]}.
+
+    The page at afl.com.au/news/injury-news serves static HTML containing
+    18 injury tables (one per club). Each table is preceded by a club banner
+    image whose filename encodes the team name.
+
+    Players with return status 'Test' are excluded (they may play).
+    All other listed players are treated as confirmed out.
+    """
     try:
-        r = requests.get(AFL_INJURY_URL, headers={
-            "User-Agent": "Mozilla/5.0 (compatible; AFL-Tipster-Bot/1.0)"
+        r = requests.get(AFL_INJURY_NEWS_URL, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }, timeout=15)
-        # Extract text between common injury sections
-        text = r.text
-        # Basic cleanup - strip HTML tags
-        clean = re.sub(r'<[^>]+>', ' ', text)
-        clean = re.sub(r'\s+', ' ', clean).strip()
-        # Grab the first 8000 chars which usually covers all clubs
-        return clean[:8000]
+        r.raise_for_status()
+        html = r.text
     except Exception as e:
-        print(f"Could not fetch injury page: {e}")
-        return ""
-
-def analyse_injuries_with_claude(injury_text, teams_data):
-    """Use Claude to parse injury news and return structured updates."""
-    if not injury_text:
-        print("No injury text to analyse.")
+        print(f"Could not fetch AFL injury news page: {e}")
         return {}
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("No ANTHROPIC_API_KEY found. Skipping injury analysis.")
+    # Locate all <table> start positions
+    table_starts = [m.start() for m in re.finditer(r'<table', html)]
+    if not table_starts:
+        print("No tables found on AFL injury news page.")
         return {}
 
-    client = anthropic.Anthropic(api_key=api_key)
+    # Pattern to extract image filenames from photo-resources URLs
+    img_pat = re.compile(r'photo-resources/[^"]+/([^/"?]+\.jpg)')
 
-    team_names = "\n".join([f"- {short}: {data['name']}" for short, data in teams_data.items()])
+    injured_map = {}
+    prev_table_end = 0  # track end of previous table to limit image search scope
 
-    prompt = f"""You are an AFL injury analyst. I will give you the latest AFL injury news text, and a list of teams with their short codes.
+    for table_idx, tstart in enumerate(table_starts):
+        # Determine team from the banner image that appears BETWEEN the previous
+        # table's end and this table's start (isolates each team's own section).
+        preamble = html[prev_table_end:tstart]
+        imgs = img_pat.findall(preamble)
+        team_code = None
+        for fn in reversed(imgs):
+            team_code = _img_filename_to_code(fn)
+            if team_code:
+                break
 
-Your job is to identify which named players are confirmed OUT or INJURED for this week based on the text.
+        if not team_code:
+            # Fallback: use sequential position (page lists teams alphabetically)
+            if table_idx < len(TEAM_ORDER_FALLBACK):
+                team_code = TEAM_ORDER_FALLBACK[table_idx]
+                print(f"  (no banner image for table {table_idx + 1}, assuming {team_code} by position)")
+            else:
+                print(f"  WARNING: Could not identify team for table {table_idx + 1}")
+                continue
 
-Team codes:
-{team_names}
+        # Extract this table's HTML
+        tend = html.find('</table>', tstart) + len('</table>')
+        prev_table_end = tend  # advance marker past this table
+        table_html = html[tstart:tend]
 
-Injury news text:
-{injury_text}
+        # Parse all <td> text values (skip <th> header row)
+        tds = re.findall(r'<td[^>]*>([^<]+)</td>', table_html)
 
-Return ONLY a valid JSON object mapping team short codes to arrays of injured player surnames.
-Only include players who are CONFIRMED OUT — not just doubtful or under observation.
-Example format:
-{{
-  "SYD": ["Gulden", "Heeney"],
-  "GWS": ["Taylor", "Kelly", "Daniels"],
-  "NTH": ["Wardlaw"]
-}}
+        # Table columns: Player | Injury | Return (repeating groups of 3)
+        out_players = []
+        for i in range(0, len(tds) - 2, 3):
+            player_name = tds[i].strip()
+            return_status = tds[i + 2].strip()
 
-If no confirmed injuries for a team, omit them. Return only the JSON, nothing else."""
+            # Skip players listed as 'Test' — they may play this week
+            if return_status.lower() == 'test':
+                continue
 
-    try:
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw = message.content[0].text.strip()
-        # Clean up any markdown fences if present
-        raw = re.sub(r'^```json\s*', '', raw)
-        raw = re.sub(r'\s*```$', '', raw)
-        parsed = json.loads(raw)
-        print(f"Claude identified injuries for {len(parsed)} teams")
-        return parsed
-    except Exception as e:
-        print(f"Claude injury analysis failed: {e}")
-        return {}
+            # Use the last word as the surname
+            surname = player_name.split()[-1] if player_name else None
+            if surname:
+                out_players.append(surname)
+
+        if out_players:
+            injured_map[team_code] = out_players
+            print(f"  {team_code}: {len(out_players)} out — {', '.join(out_players)}")
+
+    total = sum(len(v) for v in injured_map.values())
+    print(f"  Total: {total} players confirmed out across {len(injured_map)} teams")
+    return injured_map
 
 def calculate_form_mult(standings, short):
     """Calculate a form multiplier from standings percentage."""
@@ -215,7 +250,6 @@ def patch_index_html(round_num, round_games, standings, injured_map):
                 print(f"  WARNING: Could not find player matching '{surname}' for {short}")
 
     # ── 4. Update the default selected round to the current upcoming round ──
-    # Find the round selector default and update it
     round_str = str(round_num) if round_num != 0 else "OR"
     pattern = r'(let currentRound = )"[^"]*"'
     new_html = re.sub(pattern, f'\\1"{round_str}"', html, count=1)
@@ -243,22 +277,9 @@ def main():
     standings = get_standings()
     print(f"  Got standings for {len(standings)} teams")
 
-    # 3. Fetch and analyse injury news
-    print("🤕 Fetching injury news from AFL.com.au...")
-    injury_text = fetch_injury_news()
-
-    print("🤖 Analysing injuries with Claude...")
-    # Load teams data from the HTML to pass to Claude
-    # We just pass the TEAM_NAME_MAP since we have full team names
-    teams_for_claude = {k: {"name": v} for v, k in {
-        "Adelaide": "ADE", "Brisbane Lions": "BRI", "Carlton": "CAR",
-        "Collingwood": "COL", "Essendon": "ESS", "Fremantle": "FRE",
-        "Geelong": "GEE", "Gold Coast": "GCS", "GWS Giants": "GWS",
-        "Hawthorn": "HAW", "Melbourne": "MEL", "North Melbourne": "NTH",
-        "Port Adelaide": "POR", "Richmond": "RIC", "St Kilda": "STK",
-        "Sydney Swans": "SYD", "West Coast": "WCE", "Western Bulldogs": "WBD",
-    }.items()}
-    injured_map = analyse_injuries_with_claude(injury_text, teams_for_claude)
+    # 3. Scrape injury list from AFL injury news page
+    print("🤕 Fetching injury list from AFL.com.au/news/injury-news...")
+    injured_map = fetch_afl_injuries()
 
     # 4. Patch index.html
     print(f"\n📝 Patching index.html for Round {round_num}...")
