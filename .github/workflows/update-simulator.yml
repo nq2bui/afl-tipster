@@ -39,5 +39,5 @@ jobs:
           git config user.email "bot@aflchipster.com"
           git add index.html
           git diff --staged --quiet || git commit -m "Auto-update: Round data & injuries $(date +'%d %b %Y')"
-          git pull --rebase origin main
-          git push
+          git pull --no-rebase -X ours origin main --no-edit
+          git push origin main
