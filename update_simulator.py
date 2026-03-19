@@ -54,6 +54,32 @@ SC_ABBREV_MAP = {
 }
 
 
+def sc_to_rating(price, avg_score, games_played, min_games=2):
+    """Convert SuperCoach price / avg score to a 50–99 simulator rating.
+
+    Prefers avg_score once the player has played enough games (more accurate).
+    Falls back to price-based rating pre-season or for new players.
+
+    Scale reference:
+      Avg score:  40 → 50,  85 → 74,  130 → 99
+      Price:    $117k → 50,  $750k → 74,  $1.4M → 99
+    """
+    SC_MIN_PRICE = 117_300
+    SC_MAX_PRICE = 1_400_000
+    SC_MIN_AVG   = 40.0
+    SC_MAX_AVG   = 130.0
+
+    if avg_score and games_played and games_played >= min_games:
+        t = max(0.0, min(1.0, (avg_score - SC_MIN_AVG) / (SC_MAX_AVG - SC_MIN_AVG)))
+        return max(50, min(99, round(50 + t * 49)))
+
+    if price and price >= SC_MIN_PRICE:
+        t = max(0.0, min(1.0, (price - SC_MIN_PRICE) / (SC_MAX_PRICE - SC_MIN_PRICE)))
+        return max(50, min(99, round(50 + t * 49)))
+
+    return None  # not enough data to rate
+
+
 def squiggle_get(query_params):
     """Fetch data from the Squiggle API."""
     try:
@@ -180,12 +206,14 @@ def fetch_footywire_injuries():
     return injured_map
 
 
-def fetch_supercoach_injuries():
-    """Fetch confirmed team selections from the SuperCoach public API.
+def fetch_supercoach_data():
+    """Fetch player data from SuperCoach API in a single request.
 
-    Returns {team_code: [surnames]} for players named out this week.
-    Only populated after teams are announced (typically Thu-Sat).
-    'Bye' entries are skipped — the whole team isn't playing, not injured.
+    Returns a tuple:
+      injuries_map: {team_code: [surnames]} — players confirmed OUT this week.
+                    Only populated after teams named (Thu–Sat). Bye entries skipped.
+      ratings_map:  {(team_code, surname): rating} — 50–99 rating derived from
+                    avg score (when ≥2 games played) or price (pre-season fallback).
     """
     try:
         r = requests.get(SUPERCOACH_URL, headers={
@@ -196,19 +224,13 @@ def fetch_supercoach_injuries():
         players = r.json()
     except Exception as e:
         print(f"  Could not fetch SuperCoach data: {e}")
-        return {}
+        return {}, {}
 
-    injured_map = {}
-    skipped_bye = 0
+    injuries_map = {}
+    ratings_map  = {}
+    skipped_bye  = 0
 
     for p in players:
-        status = p.get("injury_suspension_status")
-        if not status:
-            continue
-        if status.lower() == "bye":
-            skipped_bye += 1
-            continue
-
         sc_abbrev = p.get("team", {}).get("abbrev", "")
         team_code = SC_ABBREV_MAP.get(sc_abbrev)
         if not team_code:
@@ -218,18 +240,36 @@ def fetch_supercoach_injuries():
         if not surname:
             continue
 
-        injured_map.setdefault(team_code, [])
-        if surname not in injured_map[team_code]:
-            injured_map[team_code].append(surname)
+        # ── Injuries ──
+        status = p.get("injury_suspension_status")
+        if status:
+            if status.lower() == "bye":
+                skipped_bye += 1
+            else:
+                injuries_map.setdefault(team_code, [])
+                if surname not in injuries_map[team_code]:
+                    injuries_map[team_code].append(surname)
 
-    total = sum(len(v) for v in injured_map.values())
-    print(f"  SuperCoach: {total} players confirmed out across {len(injured_map)} teams "
-          f"(skipped {skipped_bye} bye-week entries)")
-    if total > 0:
-        for team, names in sorted(injured_map.items()):
+        # ── Rating from SC price / avg score ──
+        # Try common field name variants across SC API versions
+        price  = p.get("price") or p.get("cost") or p.get("value") or 0
+        avg    = (p.get("avg_points") or p.get("average") or
+                  p.get("stats", {}).get("avg_points") or 0)
+        games  = (p.get("games_played") or p.get("total_games") or
+                  p.get("stats", {}).get("games_played") or 0)
+
+        rating = sc_to_rating(price, avg, games)
+        if rating:
+            ratings_map[(team_code, surname)] = rating
+
+    inj_total = sum(len(v) for v in injuries_map.values())
+    print(f"  SuperCoach: {inj_total} injuries confirmed, {len(ratings_map)} player ratings loaded"
+          f" (skipped {skipped_bye} bye-week entries)")
+    if inj_total > 0:
+        for team, names in sorted(injuries_map.items()):
             print(f"    {team}: {', '.join(names)}")
 
-    return injured_map
+    return injuries_map, ratings_map
 
 
 def merge_injury_maps(base, override):
@@ -259,7 +299,7 @@ def calculate_form_mult(standings, short):
     return round(max(0.82, min(1.18, base + pct_adj)), 3)
 
 
-def patch_index_html(round_num, round_games, standings, injured_map):
+def patch_index_html(round_num, round_games, standings, injured_map, ratings_map=None):
     """Read index.html, patch TEAMS formMult and player out flags, and write back."""
     with open("index.html", "r", encoding="utf-8") as f:
         html = f.read()
@@ -309,6 +349,36 @@ def patch_index_html(round_num, round_games, standings, injured_map):
             else:
                 print(f"  (no roster match for {short}:{surname})")
 
+    # ── 4. Update player ratings from SuperCoach prices / avg scores ──
+    if ratings_map:
+        updated = 0
+        teams_with_ratings = set(k[0] for k in ratings_map)
+        for short in teams_with_ratings:
+            team_pat = re.compile(
+                rf'{re.escape(short)}:{{[^[]+players:\[([^\]]*)\]',
+                re.DOTALL
+            )
+            m = team_pat.search(html)
+            if not m:
+                print(f"  WARNING: Could not locate {short} players section for rating update")
+                continue
+            s_start, s_end = m.start(1), m.end(1)
+            section = html[s_start:s_end]
+            changed = False
+            for (t_code, surname), rating in ratings_map.items():
+                if t_code != short:
+                    continue
+                pat = rf'({{n:"[^"]*{re.escape(surname)}[^"]*",r:)\d+'
+                new_section = re.sub(pat, rf'\g<1>{rating}', section, count=1)
+                if new_section != section:
+                    section = new_section
+                    changed = True
+                    updated += 1
+                    print(f"  Rating {short} - {surname} -> {rating}")
+            if changed:
+                html = html[:s_start] + section + html[s_end:]
+        print(f"  Updated {updated} player ratings from SuperCoach")
+
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -337,11 +407,13 @@ def main():
     if not fw_map:
         print("  No FootyWire data available")
 
-    # 4. SuperCoach — available after teams named (Thu-Sat); confirms final outs
-    print("\nFetching confirmed team selections from SuperCoach...")
-    sc_map = fetch_supercoach_injuries()
+    # 4. SuperCoach — available after teams named (Thu-Sat); confirms final outs + ratings
+    print("\nFetching SuperCoach player data (injuries + ratings)...")
+    sc_map, ratings_map = fetch_supercoach_data()
     if not sc_map:
         print("  Teams not yet named (SuperCoach will update Thu-Sat)")
+    if not ratings_map:
+        print("  No SuperCoach ratings available — player ratings unchanged")
 
     # 5. Merge: FootyWire as base, SuperCoach adds confirmed outs on top
     injured_map = merge_injury_maps(fw_map, sc_map)
@@ -350,7 +422,7 @@ def main():
 
     # 6. Patch index.html
     print(f"\nPatching index.html for Round {round_num}...")
-    patch_index_html(round_num, round_games, standings, injured_map)
+    patch_index_html(round_num, round_games, standings, injured_map, ratings_map)
 
     print("\nAll done! Changes committed by GitHub Actions.\n")
 
