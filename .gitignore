@@ -1,0 +1,6 @@
+new_imgs.json
+new_imgs_final.json
+player_images.json
+player_img_map.json
+__pycache__/
+*.pyc
