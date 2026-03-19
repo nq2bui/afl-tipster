@@ -2,8 +2,8 @@ name: Update AFL Simulator Weekly
 
 on:
   schedule:
-    # Runs every Wednesday at 10am AEST (midnight UTC Wednesday)
-    - cron: '0 0 * * 3'
+    # Runs every Wednesday at ~10am AEST / ~11am AEDT (11pm UTC Tuesday)
+    - cron: '0 23 * * 2'
   workflow_dispatch: # allows manual trigger from GitHub UI
 
 permissions:
@@ -29,6 +29,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python update_simulator.py
+        working-directory: ${{ github.workspace }}
 
       - name: Commit and push changes
         run: |
