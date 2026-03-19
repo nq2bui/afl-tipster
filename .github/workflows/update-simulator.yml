@@ -1,9 +1,11 @@
-name: Update AFL Simulator Weekly
+name: Update AFL Simulator Daily
 
 on:
   schedule:
-    # Runs every Wednesday at ~10am AEST / ~11am AEDT (11pm UTC Tuesday)
-    - cron: '0 23 * * 2'
+    # 9am AEST daily (11pm UTC previous day)
+    - cron: '0 23 * * *'
+    # 12pm AEST daily (2am UTC same day)
+    - cron: '0 2 * * *'
   workflow_dispatch: # allows manual trigger from GitHub UI
 
 permissions:
