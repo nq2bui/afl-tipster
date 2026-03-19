@@ -236,18 +236,30 @@ def patch_index_html(round_num, round_games, standings, injured_map):
     html = re.sub(r'(,out:)true', r'\1false', html)
     print("  Reset all player out flags to false")
 
-    # ── 3. Set confirmed injuries to out:true ──
+    # ── 3. Set confirmed injuries to out:true (restricted to each team's section) ──
+    # Pattern to locate each team's player array in the TEAMS constant
+    # SHORT:{...players:[CONTENTS]} — player objects use {} not [], so first ] closes it
     for short, injured_surnames in injured_map.items():
+        team_pat = re.compile(
+            rf'{re.escape(short)}:{{[^[]+players:\[([^\]]*)\]',
+            re.DOTALL
+        )
         for surname in injured_surnames:
-            # Match player name containing this surname and set their out flag
-            # Pattern: {n:"Firstname Surname",r:XX,pos:"XXX",out:false}
-            pattern = rf'({{n:"[^"]*{re.escape(surname)}[^"]*",r:\d+,pos:"[A-Z]+",out:)false'
-            new_html = re.sub(pattern, r'\1true', html, count=1)
-            if new_html != html:
-                html = new_html
+            # Re-search after each replacement (length may change: false→true is -1 char)
+            m = team_pat.search(html)
+            if not m:
+                print(f"  WARNING: Could not locate {short} players section")
+                break
+            s_start, s_end = m.start(1), m.end(1)
+            section = html[s_start:s_end]
+
+            player_pat = rf'({{n:"[^"]*{re.escape(surname)}[^"]*",r:\d+,pos:"[A-Z]+",out:)false'
+            new_section = re.sub(player_pat, r'\1true', section, count=1)
+            if new_section != section:
+                html = html[:s_start] + new_section + html[s_end:]
                 print(f"  Marked {short} - {surname} as OUT")
             else:
-                print(f"  WARNING: Could not find player matching '{surname}' for {short}")
+                print(f"  (no roster match for {short}:{surname})")
 
     # ── 4. Update the default selected round to the current upcoming round ──
     round_str = str(round_num) if round_num != 0 else "OR"
