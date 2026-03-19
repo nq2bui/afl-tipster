@@ -105,7 +105,7 @@ main{position:relative;z-index:5;padding:22px 24px}
 .adj-input,.s-select{background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:5px 8px;border-radius:6px;text-align:center}
 .adj-input{width:58px}.s-select{flex:1;text-align:left}
 .adj-input:focus,.s-select:focus{outline:none;border-color:rgba(240,165,0,.4)}
-.player-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-top:8px}
+.player-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-top:8px}
 .player-row{display:flex;align-items:center;gap:7px;background:rgba(0,0,0,0.18);border-radius:6px;padding:6px 9px}
 .p-pos{font-size:10px;color:var(--muted);width:26px;flex-shrink:0}
 .p-name{font-size:12px;color:var(--white);flex:1}
@@ -116,6 +116,8 @@ main{position:relative;z-index:5;padding:22px 24px}
 .p-toggle::after{content:'';position:absolute;width:11px;height:11px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .2s}
 .p-toggle.out::after{transform:translateX(13px)}
 .p-lbl{font-size:9px;color:var(--muted);width:22px;flex-shrink:0}
+.p-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12)}
+.p-avatar-ph{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted)}
 .psec-title{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:10px 0 5px}
 
 /* SUMMARY */
@@ -244,6 +246,117 @@ const LOGOS = {
   HAW:"logos/HAW.png", MEL:"logos/MEL.png", NTH:"logos/NTH.png",
   POR:"logos/POR.png", RIC:"logos/RIC.png", STK:"logos/STK.png",
   SYD:"logos/SYD.png", WBD:"logos/WBD.png", WCE:"logos/WCE.png",
+};
+
+// Player headshot URLs keyed by "CODE:Abbreviated Name"
+const PLAYER_IMGS = {
+  "ADE:R. Thilthorpe":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008384.png?im=Resize,width=200",
+  "ADE:I. Rankine":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1001195.png?im=Resize,width=200",
+  "ADE:W. Milera":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990882.png?im=Resize,width=200",
+  "ADE:J. Worrell":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1011981.png?im=Resize,width=200",
+  "ADE:D. Fogarty":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/999331.png?im=Resize,width=200",
+  "ADE:J. Dawson":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992242.png?im=Resize,width=200",
+  "ADE:B. Keays":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/993946.png?im=Resize,width=200",
+  "BRI:L. Neale":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293535.png?im=Resize,width=200",
+  "BRI:D. Zorko":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/261224.png?im=Resize,width=200",
+  "BRI:H. McCluggage":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1000978.png?im=Resize,width=200",
+  "BRI:Z. Bailey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1002312.png?im=Resize,width=200",
+  "CAR:P. Cripps":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/990704.png?im=Resize,width=200",
+  "CAR:H. McKay":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1000953.png?im=Resize,width=200",
+  "CAR:S. Walsh":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006094.png?im=Resize,width=200",
+  "CAR:L. Fogarty":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1002228.png?im=Resize,width=200",
+  "CAR:M. Cottrell":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008154.png?im=Resize,width=200",
+  "CAR:A. Saad":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/295461.png?im=Resize,width=200",
+  "COL:N. Daicos":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023261.png?im=Resize,width=200",
+  "COL:J. Daicos":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1005054.png?im=Resize,width=200",
+  "COL:B. McCreery":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004757.png?im=Resize,width=200",
+  "COL:S. Pendlebury":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/260257.png?im=Resize,width=200",
+  "COL:J. Crisp":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293871.png?im=Resize,width=200",
+  "COL:D. Moore":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298288.png?im=Resize,width=200",
+  "COL:B. Frampton":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/991773.png?im=Resize,width=200",
+  "ESS:Z. Merrett":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992016.png?im=Resize,width=200",
+  "ESS:N. Martin":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1012013.png?im=Resize,width=200",
+  "ESS:A. McGrath":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/998102.png?im=Resize,width=200",
+  "FRE:A. Brayshaw":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1002232.png?im=Resize,width=200",
+  "FRE:M. Johnson":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1016825.png?im=Resize,width=200",
+  "FRE:H. Young":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009256.png?im=Resize,width=200",
+  "FRE:L. Ryan":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/998659.png?im=Resize,width=200",
+  "FRE:A. Pearce":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298409.png?im=Resize,width=200",
+  "GEE:J. Cameron":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293845.png?im=Resize,width=200",
+  "GEE:P. Dangerfield":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/270917.png?im=Resize,width=200",
+  "GEE:T. Atkins":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/994386.png?im=Resize,width=200",
+  "GEE:Z. Guthrie":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004870.png?im=Resize,width=200",
+  "GEE:M. Holmes":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1015889.png?im=Resize,width=200",
+  "GEE:T. Stewart":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/291800.png?im=Resize,width=200",
+  "GEE:S. De Koning":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009229.png?im=Resize,width=200",
+  "GCS:T. Miller":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298272.png?im=Resize,width=200",
+  "GCS:M. Rowell":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009208.png?im=Resize,width=200",
+  "GCS:N. Anderson":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009199.png?im=Resize,width=200",
+  "GCS:B. King":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006144.png?im=Resize,width=200",
+  "GCS:J. Walter":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023736.png?im=Resize,width=200",
+  "GCS:W. Powell":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1007881.png?im=Resize,width=200",
+  "GCS:B. Humphrey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023500.png?im=Resize,width=200",
+  "GWS:L. Whitfield":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/294305.png?im=Resize,width=200",
+  "GWS:T. Green":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009528.png?im=Resize,width=200",
+  "GWS:J. Hogan":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/296324.png?im=Resize,width=200",
+  "GWS:S. Taylor":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1005247.png?im=Resize,width=200",
+  "GWS:J. Kelly":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/296347.png?im=Resize,width=200",
+  "GWS:B. Daniels":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1002251.png?im=Resize,width=200",
+  "GWS:H. Himmelberg":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/993107.png?im=Resize,width=200",
+  "HAW:J. Ward":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1017110.png?im=Resize,width=200",
+  "HAW:J. Newcombe":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1020895.png?im=Resize,width=200",
+  "HAW:J. Gunston":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/291351.png?im=Resize,width=200",
+  "HAW:J. Sicily":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/297566.png?im=Resize,width=200",
+  "HAW:C. Nash":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1007124.png?im=Resize,width=200",
+  "HAW:K. Amon":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/297354.png?im=Resize,width=200",
+  "HAW:L. Meek":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1000980.png?im=Resize,width=200",
+  "HAW:J. Impey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/296254.png?im=Resize,width=200",
+  "MEL:M. Gawn":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290528.png?im=Resize,width=200",
+  "MEL:J. Viney":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/291902.png?im=Resize,width=200",
+  "MEL:J. Bowey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1012825.png?im=Resize,width=200",
+  "MEL:T. McDonald":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/291533.png?im=Resize,width=200",
+  "NTH:H. Sheezel":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023518.png?im=Resize,width=200",
+  "NTH:L. Davies-Uniacke":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1002267.png?im=Resize,width=200",
+  "NTH:C. McKercher":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1024272.png?im=Resize,width=200",
+  "NTH:N. Larkey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1001017.png?im=Resize,width=200",
+  "NTH:G. Wardlaw":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1023477.png?im=Resize,width=200",
+  "NTH:T. Powell":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1011659.png?im=Resize,width=200",
+  "NTH:B. Scott":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006058.png?im=Resize,width=200",
+  "POR:Z. Butters":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006121.png?im=Resize,width=200",
+  "POR:O. Wines":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/294318.png?im=Resize,width=200",
+  "POR:W. Drew":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1000972.png?im=Resize,width=200",
+  "POR:S. Powell-Pepper":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/993979.png?im=Resize,width=200",
+  "POR:M. Georgiades":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1010174.png?im=Resize,width=200",
+  "RIC:T. Taranto":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/998172.png?im=Resize,width=200",
+  "RIC:N. Vlastuin":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/294674.png?im=Resize,width=200",
+  "RIC:T. Lynch":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293813.png?im=Resize,width=200",
+  "RIC:D. Prestia":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290627.png?im=Resize,width=200",
+  "RIC:T. Nankervis":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298174.png?im=Resize,width=200",
+  "RIC:M. Rioli":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1009551.png?im=Resize,width=200",
+  "RIC:J. Faull":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1028498.png?im=Resize,width=200",
+  "STK:R. Marshall":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/992468.png?im=Resize,width=200",
+  "STK:M. Wood":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/295340.png?im=Resize,width=200",
+  "STK:M. Phillipou":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1020137.png?im=Resize,width=200",
+  "STK:L. Ryan":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1004364.png?im=Resize,width=200",
+  "SYD:E. Gulden":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1013128.png?im=Resize,width=200",
+  "SYD:I. Heeney":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/298539.png?im=Resize,width=200",
+  "SYD:C. Mills":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/993905.png?im=Resize,width=200",
+  "SYD:J. McInerney":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1011936.png?im=Resize,width=200",
+  "SYD:N. Blakey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006028.png?im=Resize,width=200",
+  "SYD:J. Amartey":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008091.png?im=Resize,width=200",
+  "SYD:B. Grundy":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/293957.png?im=Resize,width=200",
+  "WBD:M. Bontempelli":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/297373.png?im=Resize,width=200",
+  "WBD:A. Treloar":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/291790.png?im=Resize,width=200",
+  "WBD:A. Naughton":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1002404.png?im=Resize,width=200",
+  "WBD:S. Darcy":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1017126.png?im=Resize,width=200",
+  "WBD:E. Richards":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1008280.png?im=Resize,width=200",
+  "WBD:T. Liberatore":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/290799.png?im=Resize,width=200",
+  "WBD:J. Freijah":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1027704.png?im=Resize,width=200",
+  "WCE:E. Yeo":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/292128.png?im=Resize,width=200",
+  "WCE:T. Kelly":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/295898.png?im=Resize,width=200",
+  "WCE:B. Williams":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1006114.png?im=Resize,width=200",
+  "WCE:H. Edwards":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/1011437.png?im=Resize,width=200",
+  "WCE:J. Waterman":"https://s.afl.com.au/staticfile/AFL%20Tenant/AFL/Players/ChampIDImages/AFL/2026014/996554.png?im=Resize,width=200",
 };
 
 const TEAMS = {
@@ -817,14 +930,21 @@ function renderSettings(){
         <input class="adj-input" type="number" min="0.7" max="1.3" step="0.01" value="${team.formMult}" onchange="TEAMS['${short}'].formMult=+this.value;refreshCardStr()">
       </div>
       <div class="psec-title">Players — click toggle to mark OUT</div>
-      <div class="player-list">${team.players.map((p,i)=>`
+      <div class="player-list">${team.players.map((p,i)=>{
+        const imgKey=`${short}:${p.n}`;
+        const imgUrl=PLAYER_IMGS[imgKey];
+        const avatar=imgUrl
+          ?`<img class="p-avatar" src="${imgUrl}" alt="${p.n}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          :``;
+        const ph=`<div class="p-avatar-ph" ${imgUrl?'style="display:none"':''}>${p.pos}</div>`;
+        return`
         <div class="player-row">
-          <span class="p-pos">${p.pos}</span>
+          ${avatar}${ph}
           <span class="p-name">${p.n}</span>
           <input class="p-rating" type="number" min="50" max="99" value="${p.r}" onchange="TEAMS['${short}'].players[${i}].r=+this.value;refreshCardStr()">
           <button class="p-toggle ${p.out?'out':''}" id="pt_${short}_${i}" onclick="toggleP('${short}',${i})"></button>
           <span class="p-lbl" id="pl_${short}_${i}">${p.out?'OUT':'FIT'}</span>
-        </div>`).join('')}
+        </div>`;}).join('')}
       </div>
     `;
     grid.appendChild(card);
