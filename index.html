@@ -87,6 +87,9 @@ main{position:relative;z-index:5;padding:22px 24px}
 .dist-col{flex:1;border-radius:2px 2px 0 0;min-height:2px;transition:height .5s ease}
 .dist-rlbls{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.22);margin-top:2px}
 .conf-pill{display:inline-flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-top:8px}
+.model-pill{display:inline-flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-top:8px;margin-left:6px;background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--line)}
+.model-select{background:rgba(0,0,0,0.4);border:1px solid var(--cb);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;max-width:180px}
+.model-select option{background:#1a3a1a}
 .ch{background:rgba(82,194,122,.14);color:var(--success);border:1px solid rgba(82,194,122,.28)}
 .cm{background:rgba(240,165,0,.14);color:var(--gold);border:1px solid rgba(240,165,0,.28)}
 .cl{background:rgba(82,164,224,.14);color:var(--info);border:1px solid rgba(82,164,224,.2)}
@@ -154,6 +157,10 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
   </div>
   <div class="header-right">
     <select class="round-select" id="roundSel" onchange="changeRound(this.value)"></select>
+    <select class="model-select" id="modelSel" title="Prediction model">
+      <option value="monte-carlo">🎲 Monte Carlo</option>
+      <option value="elo">📊 ELO Model</option>
+    </select>
     <span class="round-badge" id="roundBadge">Round 2</span>
     <button class="hdr-btn btn-gold" id="runAllBtn" onclick="runAllSims()">▶ Simulate All</button>
     <button class="hdr-btn btn-ghost" onclick="showTab('summary',document.querySelectorAll('.nav-tab')[2])">📋 Tips</button>
@@ -689,7 +696,7 @@ function showRes(id,ht,at,r){
       <div class="dist-bars">${dist}</div>
       <div class="dist-rlbls"><span>0–15</span><span>15–30</span><span>30–45</span><span>45–60</span><span>60+</span></div>
     </div>
-    <span class="conf-pill ${conf.c}">${conf.t}</span>
+    <span class="conf-pill ${conf.c}">${conf.t}</span><span class="model-pill">${r.model==='elo'?'📊 ELO Model':'🎲 Monte Carlo'}</span>
   `;
   panel.classList.add('show');
   document.getElementById(`card-${id}`).classList.add('simulated');
@@ -697,11 +704,31 @@ function showRes(id,ht,at,r){
   if(btn)btn.textContent='↺ Re-simulate';
 }
 
+function runElo(match){
+  const hs=teamStr(match.h),as=teamStr(match.a);
+  // Map team strength to ELO scale then apply HGA + H2H
+  const homeElo=hs*12+match.hga*15+match.h2h*10;
+  const awayElo=as*12;
+  const eloDiff=homeElo-awayElo;
+  const hwp=1/(1+Math.pow(10,-eloDiff/400));
+  const awp=1-hwp;
+  const sign=hwp>=0.5?1:-1;
+  const avgM=Math.round(Math.abs(eloDiff)/20);
+  const base=92;
+  const avgH=Math.max(35,Math.round(base+sign*avgM*0.5));
+  const avgA=Math.max(35,Math.round(base-sign*avgM*0.5));
+  // Synthetic margin distribution (bell curve centred on avgM, σ=20)
+  const bkts=Array(8).fill(0);
+  for(let i=0;i<2000;i++){const m=Math.abs(avgM+randn()*20);bkts[Math.min(7,Math.floor(m/15))]++;}
+  return{hwp,awp,avgM,avgH,avgA,bkts,hs:Math.round(hs*10)/10,as:Math.round(as*10)/10,model:'elo'};
+}
+
 function simMatch(id,ht,at,hga,h2h){
   const btn=document.getElementById(`btn-${id}`);
+  const model=(document.getElementById('modelSel')||{}).value||'monte-carlo';
   if(btn){btn.textContent='⟳ Simulating…';btn.disabled=true;}
   setTimeout(()=>{
-    const r=runSim({h:ht,a:at,hga,h2h});
+    const r=model==='elo'?runElo({h:ht,a:at,hga,h2h}):runSim({h:ht,a:at,hga,h2h});
     simResults[id]={ht,at,r};
     showRes(id,ht,at,r);
     if(btn)btn.disabled=false;
