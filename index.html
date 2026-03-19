@@ -154,29 +154,17 @@ main{position:relative;z-index:5;padding:22px 24px}
 .mini-fill{height:100%;background:var(--gold);border-radius:3px}
 .empty-state{text-align:center;padding:36px;color:var(--muted);font-size:13px}
 
-/* LADDER TABLE */
-.ladder-wrap{overflow-x:auto}
-.ladder-table{width:100%;border-collapse:collapse;font-size:13px}
-.ladder-table thead th{padding:8px 10px;text-align:center;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.04em;border-bottom:2px solid var(--cb);white-space:nowrap;cursor:pointer;user-select:none}
-.ladder-table thead th:nth-child(2){text-align:left}
-.ladder-table thead th:hover{color:var(--white)}
-.ladder-table tbody tr{border-bottom:1px solid var(--line);transition:background .12s}
-.ladder-table tbody tr:hover{background:var(--surface3)}
-.ladder-table td{padding:9px 10px;text-align:center;vertical-align:middle}
-.ladder-table td:nth-child(2){text-align:left}
-.ldr-afl-rank{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--muted);width:34px}
-.ldr-team-cell .ldr-team{display:flex;align-items:center;gap:8px}
-.ldr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.ldr-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white)}
-.ldr-num{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
-.ldr-rating{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--gold)}
-.ldr-sim-rank{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--white)}
-.ldr-delta{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700}
-.ldr-delta-pos{color:#22c55e}
-.ldr-delta-neg{color:#ef4444}
-.ldr-delta-neu{color:var(--muted)}
-.ldr-inj{font-size:12px}
-.ldr-top8 td:first-child{border-left:3px solid var(--gold)}
+/* LADDER */
+.ladder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.ladder-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:12px 14px}
+.club-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.club-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.club-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white)}
+.club-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.club-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.cs-box{background:var(--surface);border-radius:6px;padding:5px;text-align:center}
+.cs-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white)}
+.cs-lbl{font-size:9px;color:var(--muted)}
 
 footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -269,7 +257,7 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
   </div>
 
   <div class="tab-panel" id="tab-ladder">
-    <div class="ladder-wrap"><div id="ladderGrid"></div></div>
+    <div class="ladder-grid" id="ladderGrid"></div>
   </div>
 
   <div class="tab-panel" id="tab-accuracy">
@@ -1178,97 +1166,33 @@ const SQUIGGLE_NAME_MAP={
   "West Coast":"WCE","Western Bulldogs":"WBD"
 };
 
-async function renderLadder(){
+function renderLadder(){
   const grid=document.getElementById('ladderGrid');
-  grid.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px">Loading standings…</div>';
-
-  // Fetch live standings from Squiggle
-  let hasStandings=false;
-  try{
-    const resp=await fetch('https://api.squiggle.com.au/?q=standings;year=2026',
-      {headers:{'Accept':'application/json'}});
-    const data=await resp.json();
-    if(data.standings&&data.standings.length){
-      data.standings.forEach(s=>{
-        const code=SQUIGGLE_NAME_MAP[s.name];
-        if(code&&TEAMS[code]){
-          TEAMS[code].wins=s.wins||0;
-          TEAMS[code].losses=s.losses||0;
-          TEAMS[code].pct=parseFloat((s.percentage||100).toFixed(1));
-          TEAMS[code].rank=s.rank||9;
-          hasStandings=true;
-        }
-      });
-    }
-  }catch(e){/* Squiggle unavailable — fall back to stored values */}
-
-  // Fall back to stored TEAMS values if fetch failed
-  if(!hasStandings){
-    hasStandings=Object.values(TEAMS).some(t=>t.wins>0||t.losses>0);
-  }
-
   grid.innerHTML='';
-
-  // Build entry list with sim ratings
-  const entries=Object.entries(TEAMS).map(([short,team])=>({
-    short,team,str:teamStr(short),inj:team.players.filter(p=>p.out).length
-  }));
-
-  // Assign sim ranks (1 = highest rating)
-  [...entries].sort((a,b)=>b.str-a.str).forEach((e,i)=>e.simRank=i+1);
-
-  if(hasStandings){
-    entries.sort((a,b)=>(a.team.rank||99)-(b.team.rank||99));
-  } else {
-    entries.sort((a,b)=>a.simRank-b.simRank);
-  }
-
-  const table=document.createElement('table');
-  table.className='ladder-table';
-  table.innerHTML=`<thead><tr>
-    <th title="AFL ladder position">AFL #</th>
-    <th style="text-align:left">Club</th>
-    <th title="Wins">W</th>
-    <th title="Losses">L</th>
-    <th title="Percentage">%</th>
-    <th title="Players injured/out">Inj</th>
-    <th title="Simulator strength rating">Rating</th>
-    <th title="Simulator ranking">Sim #</th>
-    <th title="AFL rank minus Sim rank (positive = sim rates higher)">Δ</th>
-  </tr></thead>`;
-
-  const tbody=document.createElement('tbody');
-  entries.forEach(e=>{
-    const aflRank=hasStandings?(e.team.rank||'–'):'–';
-    const delta=hasStandings?((e.team.rank||0)-e.simRank):null;
-    let deltaHtml='<span class="ldr-delta-neu">–</span>';
-    if(delta!==null){
-      if(delta>0) deltaHtml=`<span class="ldr-delta ldr-delta-pos">+${delta}</span>`;
-      else if(delta<0) deltaHtml=`<span class="ldr-delta ldr-delta-neg">${delta}</span>`;
-      else deltaHtml=`<span class="ldr-delta ldr-delta-neu">=</span>`;
-    }
-    const injHtml=e.inj>0
-      ?`<span class="ldr-inj" style="color:var(--danger)">${e.inj}</span>`
-      :`<span class="ldr-inj" style="color:var(--muted)">–</span>`;
-    const tr=document.createElement('tr');
-    if(hasStandings&&(e.team.rank||99)<=8) tr.className='ldr-top8';
-    tr.innerHTML=`
-      <td class="ldr-afl-rank">${aflRank}</td>
-      <td class="ldr-team-cell"><div class="ldr-team">
-        <div class="ldr-dot" style="background:${e.team.color}"></div>
-        <span class="ldr-name">${e.team.name}</span>
-      </div></td>
-      <td class="ldr-num">${e.team.wins}</td>
-      <td class="ldr-num">${e.team.losses}</td>
-      <td class="ldr-num">${e.team.pct.toFixed(1)}</td>
-      <td>${injHtml}</td>
-      <td class="ldr-rating">${e.str.toFixed(1)}</td>
-      <td class="ldr-sim-rank">${e.simRank}</td>
-      <td>${deltaHtml}</td>`;
-    tbody.appendChild(tr);
+  const sorted=Object.entries(TEAMS).sort((a,b)=>{
+    const sa=teamStr(a[0]),sb=teamStr(b[0]);return sb-sa;
   });
-  table.appendChild(tbody);
-  grid.appendChild(table);
+  sorted.forEach(([short,team],rank)=>{
+    const str=teamStr(short).toFixed(1);
+    const inj=team.players.filter(p=>p.out).length;
+    const card=document.createElement('div');
+    card.className='ladder-card';
+    card.innerHTML=`
+      <div class="club-row">
+        <div class="club-dot" style="background:${team.color}"></div>
+        <div>
+          <div class="club-name">${rank+1}. ${team.name}</div>
+          <div class="club-sub">${short} · ${inj>0?`<span style="color:var(--danger)">${inj} injured</span>`:'Full strength'}</div>
+        </div>
+      </div>
+      <div class="club-stats">
+        <div class="cs-box"><div class="cs-val" style="color:var(--gold)">${str}</div><div class="cs-lbl">Sim Str.</div></div>
+        <div class="cs-box"><div class="cs-val">${team.baseRating}</div><div class="cs-lbl">Base</div></div>
+        <div class="cs-box"><div class="cs-val">${(team.formMult*100).toFixed(0)}%</div><div class="cs-lbl">Form</div></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
 }
 
 // ═══════════════════════════════════════════════════════
