@@ -114,6 +114,12 @@ main{position:relative;z-index:5;padding:22px 24px}
 .cl{background:rgba(82,164,224,.14);color:var(--info);border:1px solid rgba(82,164,224,.2)}
 
 /* SETTINGS */
+.settings-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.sf-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:8px;border:1px solid var(--cb);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .2s}
+.sf-btn:hover{color:var(--white);background:var(--surface3)}
+.sf-btn.active{background:rgba(224,82,82,0.15);border-color:rgba(224,82,82,0.35);color:var(--danger)}
+.sf-btn.active[id="sfAll"]{background:rgba(240,165,0,0.12);border-color:rgba(240,165,0,0.3);color:var(--gold)}
+.sf-count{font-size:12px;color:var(--muted);margin-left:4px}
 .settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
 .s-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:18px}
 .s-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
@@ -231,6 +237,11 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
   </div>
 
   <div class="tab-panel" id="tab-settings">
+    <div class="settings-filter-bar">
+      <button class="sf-btn active" id="sfAll" onclick="setSettingsFilter('all')">All Players</button>
+      <button class="sf-btn" id="sfInj" onclick="setSettingsFilter('injured')">🤕 Injured Only</button>
+      <span class="sf-count" id="sfCount"></span>
+    </div>
     <div class="settings-grid" id="settingsGrid"></div>
   </div>
 
@@ -998,25 +1009,48 @@ function runAllSims(){
 // ═══════════════════════════════════════════════════════
 // SETTINGS
 // ═══════════════════════════════════════════════════════
+let settingsFilter='all';
+
+function setSettingsFilter(f){
+  settingsFilter=f;
+  document.getElementById('sfAll').classList.toggle('active',f==='all');
+  document.getElementById('sfInj').classList.toggle('active',f==='injured');
+  renderSettings();
+}
+
+function updateInjuryCount(){
+  const total=Object.values(TEAMS).reduce((s,t)=>s+t.players.filter(p=>p.out).length,0);
+  const el=document.getElementById('sfCount');
+  if(el)el.textContent=total?`${total} player${total>1?'s':''} out`:settingsFilter==='injured'?'No injuries recorded':'';
+}
+
 function renderSettings(){
   const grid=document.getElementById('settingsGrid');
   grid.innerHTML='';
+  const injuredOnly=settingsFilter==='injured';
+
   Object.entries(TEAMS).forEach(([short,team])=>{
+    const visiblePlayers=injuredOnly?team.players.filter(p=>p.out):team.players;
+    if(injuredOnly&&visiblePlayers.length===0)return; // hide team card if no injuries
+
     const card=document.createElement('div');
     card.className='s-card';
     card.innerHTML=`
       <div class="s-title">
+        <img src="${LOGOS[short]||''}" style="width:22px;height:22px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
         <span>${team.name}</span>
         <span style="font-size:10px;font-family:'DM Sans';color:var(--muted)">${short}</span>
       </div>
+      ${injuredOnly?'':`
       <div class="adj-row"><label>Base rating</label>
         <input class="adj-input" type="number" min="50" max="99" value="${team.baseRating}" onchange="TEAMS['${short}'].baseRating=+this.value;refreshCardStr()">
       </div>
       <div class="adj-row"><label>Form multiplier</label>
         <input class="adj-input" type="number" min="0.7" max="1.3" step="0.01" value="${team.formMult}" onchange="TEAMS['${short}'].formMult=+this.value;refreshCardStr()">
-      </div>
-      <div class="psec-title">Players — click toggle to mark OUT</div>
-      <div class="player-list">${team.players.map((p,i)=>{
+      </div>`}
+      <div class="psec-title">${injuredOnly?'Injured players':'Players — click toggle to mark OUT'}</div>
+      <div class="player-list">${visiblePlayers.map((p)=>{
+        const i=team.players.indexOf(p);
         const imgKey=`${short}:${p.n}`;
         const imgUrl=PLAYER_IMGS[imgKey];
         const avatar=imgUrl
@@ -1035,14 +1069,25 @@ function renderSettings(){
     `;
     grid.appendChild(card);
   });
+
+  if(injuredOnly&&grid.innerHTML===''){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1">No injured players recorded. Toggle players OUT on the All Players view.</div>';
+  }
+  updateInjuryCount();
 }
 
 function toggleP(short,idx){
   TEAMS[short].players[idx].out=!TEAMS[short].players[idx].out;
-  const tog=document.getElementById(`pt_${short}_${idx}`);
-  const lbl=document.getElementById(`pl_${short}_${idx}`);
-  if(tog)tog.classList.toggle('out');
-  if(lbl)lbl.textContent=TEAMS[short].players[idx].out?'OUT':'FIT';
+  if(settingsFilter==='injured'){
+    // re-render so cleared injuries disappear from the filtered view
+    renderSettings();
+  }else{
+    const tog=document.getElementById(`pt_${short}_${idx}`);
+    const lbl=document.getElementById(`pl_${short}_${idx}`);
+    if(tog)tog.classList.toggle('out');
+    if(lbl)lbl.textContent=TEAMS[short].players[idx].out?'OUT':'FIT';
+    updateInjuryCount();
+  }
   refreshCardStr();
 }
 
