@@ -238,17 +238,18 @@ def patch_index_html(round_num, round_games, standings, injured_map):
 def main():
     print(f"\nAFL Footy Tipster Auto-Updater - {datetime.now().strftime('%d %b %Y %H:%M')}\n")
 
-    # 1. Get current round from Squiggle
+    # 1. Get current round from Squiggle (optional — script continues if unavailable)
     print("Fetching round data from Squiggle API...")
     round_num, round_games = get_current_round()
     if round_num is None:
-        print("Could not determine current round. Exiting.")
-        return
+        print("  Squiggle unavailable — skipping round/standings update")
 
-    # 2. Get standings for form multipliers
-    print("Fetching ladder standings...")
-    standings = get_standings()
-    print(f"  Got standings for {len(standings)} teams")
+    # 2. Get standings for form multipliers (skip if Squiggle is down)
+    standings = {}
+    if round_num is not None:
+        print("Fetching ladder standings...")
+        standings = get_standings()
+        print(f"  Got standings for {len(standings)} teams")
 
     # 3. Fetch player injury/suspension status from SuperCoach
     print("Fetching player status from SuperCoach API...")
