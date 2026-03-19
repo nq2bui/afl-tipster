@@ -1169,8 +1169,44 @@ function updateSummary(){
 // ═══════════════════════════════════════════════════════
 // LADDER / RATINGS
 // ═══════════════════════════════════════════════════════
-function renderLadder(){
+const SQUIGGLE_NAME_MAP={
+  "Adelaide":"ADE","Brisbane Lions":"BRI","Carlton":"CAR","Collingwood":"COL",
+  "Essendon":"ESS","Fremantle":"FRE","Geelong":"GEE","Gold Coast":"GCS",
+  "Greater Western Sydney":"GWS","GWS Giants":"GWS","Hawthorn":"HAW",
+  "Melbourne":"MEL","North Melbourne":"NTH","Port Adelaide":"POR",
+  "Richmond":"RIC","St Kilda":"STK","Sydney":"SYD","Sydney Swans":"SYD",
+  "West Coast":"WCE","Western Bulldogs":"WBD"
+};
+
+async function renderLadder(){
   const grid=document.getElementById('ladderGrid');
+  grid.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px">Loading standings…</div>';
+
+  // Fetch live standings from Squiggle
+  let hasStandings=false;
+  try{
+    const resp=await fetch('https://api.squiggle.com.au/?q=standings;year=2026',
+      {headers:{'Accept':'application/json'}});
+    const data=await resp.json();
+    if(data.standings&&data.standings.length){
+      data.standings.forEach(s=>{
+        const code=SQUIGGLE_NAME_MAP[s.name];
+        if(code&&TEAMS[code]){
+          TEAMS[code].wins=s.wins||0;
+          TEAMS[code].losses=s.losses||0;
+          TEAMS[code].pct=parseFloat((s.percentage||100).toFixed(1));
+          TEAMS[code].rank=s.rank||9;
+          hasStandings=true;
+        }
+      });
+    }
+  }catch(e){/* Squiggle unavailable — fall back to stored values */}
+
+  // Fall back to stored TEAMS values if fetch failed
+  if(!hasStandings){
+    hasStandings=Object.values(TEAMS).some(t=>t.wins>0||t.losses>0);
+  }
+
   grid.innerHTML='';
 
   // Build entry list with sim ratings
@@ -1181,8 +1217,6 @@ function renderLadder(){
   // Assign sim ranks (1 = highest rating)
   [...entries].sort((a,b)=>b.str-a.str).forEach((e,i)=>e.simRank=i+1);
 
-  // Use real AFL ladder rank if standings are available (any team has played)
-  const hasStandings=entries.some(e=>e.team.wins>0||e.team.losses>0);
   if(hasStandings){
     entries.sort((a,b)=>(a.team.rank||99)-(b.team.rank||99));
   } else {
@@ -1191,9 +1225,8 @@ function renderLadder(){
 
   const table=document.createElement('table');
   table.className='ladder-table';
-  const sortLabel=hasStandings?'AFL #':'Sim #';
   table.innerHTML=`<thead><tr>
-    <th title="AFL ladder position">${sortLabel}</th>
+    <th title="AFL ladder position">AFL #</th>
     <th style="text-align:left">Club</th>
     <th title="Wins">W</th>
     <th title="Losses">L</th>
@@ -1201,11 +1234,11 @@ function renderLadder(){
     <th title="Players injured/out">Inj</th>
     <th title="Simulator strength rating">Rating</th>
     <th title="Simulator ranking">Sim #</th>
-    <th title="AFL rank minus Sim rank (+ means sim rates higher)">Δ</th>
+    <th title="AFL rank minus Sim rank (positive = sim rates higher)">Δ</th>
   </tr></thead>`;
 
   const tbody=document.createElement('tbody');
-  entries.forEach((e,i)=>{
+  entries.forEach(e=>{
     const aflRank=hasStandings?(e.team.rank||'–'):'–';
     const delta=hasStandings?((e.team.rank||0)-e.simRank):null;
     let deltaHtml='<span class="ldr-delta-neu">–</span>';
