@@ -1,8 +1,7 @@
 """
 AFL Footy Tipster — Weekly Auto-Updater
-Fetches live AFL data from the Squiggle API, the SuperCoach public API
-(for weekly team selection status), and the AFL injury news page (for
-longer-term injuries), then patches index.html automatically.
+Fetches live AFL data from the Squiggle API and the SuperCoach public API
+to determine injured/suspended players, then patches index.html automatically.
 """
 
 import requests
@@ -19,31 +18,8 @@ YEAR = 2026
 # Returns all players with injury_suspension_status field (updated when teams named Thu-Sat)
 SUPERCOACH_URL = (
     "https://supercoach.com.au/2026/api/afl/classic/v1/players-cf"
-    "?embed=notes,odds,player_stats,positions,team"
+    "?embed=positions,team"
 )
-
-# AFL injury news page — static HTML with 18 tables of current season injuries
-AFL_INJURY_NEWS_URL = "https://www.afl.com.au/news/injury-news"
-
-# AFL injury page: image filename keyword → team short code (ordered: specific before general)
-IMG_KEYWORD_MAP = [
-    ("north-melbourne", "NTH"), ("port-adelaide",   "POR"),
-    ("western-bulldog", "WBD"), ("west-coast",      "WCE"),
-    ("gc-",             "GCS"), ("gold-coast",      "GCS"),
-    ("gws",             "GWS"), ("stk-",            "STK"),
-    ("st-kilda",        "STK"), ("collingwood",     "COL"),
-    ("brisbane",        "BRI"), ("carlton",         "CAR"),
-    ("essendon",        "ESS"), ("fremantle",       "FRE"),
-    ("geelong",         "GEE"), ("hawthorn",        "HAW"),
-    ("melbourne",       "MEL"), ("richmond",        "RIC"),
-    ("sydney",          "SYD"), ("adelaide",        "ADE"),
-]
-
-# Alphabetical fallback when no banner image found for a team section
-TEAM_ORDER_FALLBACK = [
-    "ADE","BRI","CAR","COL","ESS","FRE","GEE","GCS","GWS",
-    "HAW","MEL","NTH","POR","RIC","STK","SYD","WCE","WBD",
-]
 
 # Map Squiggle team names → our short codes
 TEAM_NAME_MAP = {
@@ -182,85 +158,6 @@ def fetch_supercoach_injuries():
     return injured_map
 
 
-def _img_filename_to_code(filename):
-    fn = filename.lower()
-    for keyword, code in IMG_KEYWORD_MAP:
-        if keyword in fn:
-            return code
-    return None
-
-
-def fetch_afl_injury_news():
-    """Scrape AFL injury news page for longer-term injuries.
-
-    Returns {team_code: [surnames]} for all players on the injury list.
-    Players listed as 'Test' (might play) are excluded.
-    Used as a supplement to SuperCoach when weekly selections haven't been named.
-    """
-    try:
-        r = requests.get(AFL_INJURY_NEWS_URL, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }, timeout=15)
-        r.raise_for_status()
-        html = r.text
-    except Exception as e:
-        print(f"  Could not fetch AFL injury news: {e}")
-        return {}
-
-    table_starts = [m.start() for m in re.finditer(r'<table', html)]
-    if not table_starts:
-        return {}
-
-    img_pat = re.compile(r'photo-resources/[^"]+/([^/"?]+\.jpg)')
-    injured_map = {}
-    prev_table_end = 0
-
-    for table_idx, tstart in enumerate(table_starts):
-        preamble = html[prev_table_end:tstart]
-        imgs = img_pat.findall(preamble)
-        team_code = None
-        for fn in reversed(imgs):
-            team_code = _img_filename_to_code(fn)
-            if team_code:
-                break
-        if not team_code:
-            if table_idx < len(TEAM_ORDER_FALLBACK):
-                team_code = TEAM_ORDER_FALLBACK[table_idx]
-
-        tend = html.find('</table>', tstart) + len('</table>')
-        prev_table_end = tend
-        table_html = html[tstart:tend]
-        tds = re.findall(r'<td[^>]*>([^<]+)</td>', table_html)
-
-        if team_code:
-            for i in range(0, len(tds) - 2, 3):
-                player_name = tds[i].strip()
-                return_status = tds[i + 2].strip()
-                if return_status.lower() == 'test':
-                    continue
-                surname = player_name.split()[-1] if player_name else None
-                if surname:
-                    injured_map.setdefault(team_code, [])
-                    if surname not in injured_map[team_code]:
-                        injured_map[team_code].append(surname)
-
-    total = sum(len(v) for v in injured_map.values())
-    print(f"  AFL injury news: {total} players on injury list across {len(injured_map)} teams")
-    return injured_map
-
-
-def merge_injured_maps(*maps):
-    """Merge multiple {team: [surnames]} dicts, deduplicating surnames per team."""
-    merged = {}
-    for m in maps:
-        for team, surnames in m.items():
-            merged.setdefault(team, [])
-            for s in surnames:
-                if s not in merged[team]:
-                    merged[team].append(s)
-    return merged
-
-
 def calculate_form_mult(standings, short):
     """Calculate a form multiplier from standings percentage."""
     if short not in standings:
@@ -353,17 +250,11 @@ def main():
     standings = get_standings()
     print(f"  Got standings for {len(standings)} teams")
 
-    # 3. Fetch injuries from both SuperCoach (weekly selections) and AFL injury news (long-term)
+    # 3. Fetch player injury/suspension status from SuperCoach
     print("Fetching player status from SuperCoach API...")
-    sc_injuries = fetch_supercoach_injuries()
-
-    print("Fetching injury list from AFL injury news page...")
-    afl_injuries = fetch_afl_injury_news()
-
-    # Merge: SuperCoach takes priority but AFL injury news fills in long-term absences
-    injured_map = merge_injured_maps(sc_injuries, afl_injuries)
-    total = sum(len(v) for v in injured_map.values())
-    print(f"  Combined: {total} players out across {len(injured_map)} teams")
+    injured_map = fetch_supercoach_injuries()
+    if not injured_map:
+        print("  No confirmed injuries yet (teams may not be named yet this week)")
 
     # 4. Patch index.html
     print(f"\nPatching index.html for Round {round_num}...")
