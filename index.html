@@ -194,6 +194,48 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 .p-avatar{cursor:zoom-in}
 #avatarPreview{position:fixed;z-index:9999;pointer-events:none;display:none;border-radius:50%;overflow:hidden;width:110px;height:110px;border:2px solid var(--gold);box-shadow:0 6px 28px rgba(0,0,0,0.55)}
 #avatarPreview img{width:100%;height:100%;object-fit:cover}
+
+/* TIPS SUMMARY — filter bar + comparison view */
+.sum-filter{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.sum-filter-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:7px 16px;border-radius:8px;border:1px solid var(--cb);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .2s}
+.sum-filter-btn:hover{color:var(--white);background:var(--surface3)}
+.sum-filter-btn.active{background:rgba(240,165,0,.12);border-color:rgba(240,165,0,.3);color:var(--gold)}
+.cmp-wrap{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);overflow:hidden;display:none}
+.cmp-wrap.show{display:block}
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px}
+.cmp-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.cmp-table td{padding:10px 14px;border-bottom:1px solid var(--faint);vertical-align:middle}
+.cmp-agree{color:var(--success);font-weight:700}
+.cmp-disagree{color:var(--danger);font-weight:700}
+/* row confidence tinting */
+.row-high td{background:rgba(82,194,122,0.04)!important}
+.row-med td{background:rgba(240,165,0,0.03)!important}
+
+/* MARGIN ERROR badge */
+.merr{font-size:10px;font-weight:700;display:inline-block;padding:1px 5px;border-radius:4px;margin-left:3px}
+.merr-good{background:rgba(82,194,122,.15);color:var(--success)}
+.merr-med{background:rgba(240,165,0,.15);color:var(--gold)}
+.merr-bad{background:rgba(224,82,82,.15);color:var(--danger)}
+
+/* SEASON ACCURACY CHART */
+.season-section{margin-top:28px}
+.season-hdr{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.season-chart-wrap{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:18px 20px}
+.chart-legend{display:flex;gap:16px;margin-bottom:16px;font-size:12px;align-items:center}
+.chart-legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;flex-shrink:0}
+.chart-rounds{display:flex;align-items:flex-end;gap:8px;height:130px;overflow-x:auto;padding-bottom:2px}
+.chart-round-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:48px}
+.chart-bars{display:flex;align-items:flex-end;gap:3px;height:100px;margin-bottom:3px}
+.chart-bar{width:17px;border-radius:3px 3px 0 0;min-height:2px;transition:height .45s ease;cursor:default}
+.chart-bar-mc{background:var(--gold)}
+.chart-bar-elo{background:var(--info)}
+.chart-lbl{font-size:9px;color:var(--muted);text-align:center;white-space:nowrap}
+.chart-pcts{display:flex;gap:4px;margin-bottom:2px}
+.chart-pct-val{font-size:9px;text-align:center;width:17px}
+.season-summary{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.season-stat{background:var(--surface);border-radius:8px;padding:10px 14px;flex:1;min-width:110px}
+.season-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1}
+.season-stat-lbl{font-size:10px;color:var(--muted);margin-top:3px}
 </style>
 </head>
 <body>
@@ -238,20 +280,35 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 
   <div class="tab-panel" id="tab-settings">
     <div class="settings-filter-bar">
-      <button class="sf-btn active" id="sfAll" onclick="setSettingsFilter('all')">All Players</button>
-      <button class="sf-btn" id="sfInj" onclick="setSettingsFilter('injured')">🤕 Injured Only</button>
+      <button class="sf-btn" id="sfAll" onclick="setSettingsFilter('all')">All Players</button>
+      <button class="sf-btn active" id="sfInj" onclick="setSettingsFilter('injured')">🤕 Injured Only</button>
       <span class="sf-count" id="sfCount"></span>
     </div>
     <div class="settings-grid" id="settingsGrid"></div>
   </div>
 
   <div class="tab-panel" id="tab-summary">
-    <div class="sum-wrap">
+    <div class="sum-filter">
+      <button class="sum-filter-btn active" id="sfMy" onclick="setSumView('tips')">My Tips</button>
+      <button class="sum-filter-btn" id="sfCmp" onclick="setSumView('compare')">🔄 Compare Models</button>
+    </div>
+    <div class="sum-wrap" id="sumWrap">
       <table class="sum-table">
         <thead><tr>
           <th>Match</th><th>Tip</th><th>Win %</th><th>Margin</th><th>Confidence</th>
         </tr></thead>
         <tbody id="sumBody"><tr><td colspan="5" class="empty-state">Run simulations to see your tips.</td></tr></tbody>
+      </table>
+    </div>
+    <div class="cmp-wrap" id="cmpWrap">
+      <table class="cmp-table">
+        <thead><tr>
+          <th>Match</th>
+          <th>🎲 Monte Carlo</th>
+          <th>📊 ELO Model</th>
+          <th style="text-align:center">Agree?</th>
+        </tr></thead>
+        <tbody id="cmpBody"><tr><td colspan="4" class="empty-state">Switch to Compare Models to see both predictions.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -267,6 +324,15 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
     </div>
     <div id="accuracyContent">
       <div class="empty-state">Select a completed round above and click Analyse to compare both model predictions against actual results.</div>
+    </div>
+    <div class="season-section">
+      <div class="season-hdr">
+        Season Accuracy
+        <button class="hdr-btn btn-ghost" id="seasonLoadBtn" onclick="loadSeasonOverview()">Load All Rounds</button>
+      </div>
+      <div id="seasonContent">
+        <div class="empty-state" style="background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:36px">Click "Load All Rounds" to chart model accuracy across the season so far.</div>
+      </div>
     </div>
   </div>
 </main>
@@ -1031,7 +1097,7 @@ function runAllSims(){
 // ═══════════════════════════════════════════════════════
 // SETTINGS
 // ═══════════════════════════════════════════════════════
-let settingsFilter='all';
+let settingsFilter='injured';
 
 function setSettingsFilter(f){
   settingsFilter=f;
@@ -1142,7 +1208,8 @@ function updateSummary(){
     const hn=TEAMS[ht]?TEAMS[ht].name:ht,an=TEAMS[at]?TEAMS[at].name:at;
     const wname=r.hwp>=0.5?hn:an,wpct=r.hwp>=0.5?r.hwp:r.awp;
     const conf=wpct>=0.72?{t:'HIGH',c:'ch'}:wpct>=0.58?{t:'MED',c:'cm'}:{t:'TOSS-UP',c:'cl'};
-    return`<tr>
+    const rowClass=wpct>=0.72?'row-high':wpct>=0.58?'row-med':'';
+    return`<tr class="${rowClass}">
       <td style="color:var(--muted);font-size:12px">${hn} vs ${an}</td>
       <td><span class="tip-pill">${wname}</span></td>
       <td><span style="font-size:13px">${(wpct*100).toFixed(1)}%</span>
@@ -1152,6 +1219,58 @@ function updateSummary(){
       <td><span class="conf-pill ${conf.c}" style="font-size:10px;padding:2px 8px">${conf.t}</span></td>
     </tr>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPARE MODELS VIEW
+// ═══════════════════════════════════════════════════════
+let sumView='tips';
+function setSumView(v){
+  sumView=v;
+  document.getElementById('sfMy').classList.toggle('active',v==='tips');
+  document.getElementById('sfCmp').classList.toggle('active',v==='compare');
+  document.getElementById('sumWrap').style.display=v==='tips'?'':'none';
+  document.getElementById('cmpWrap').classList.toggle('show',v==='compare');
+  if(v==='compare')buildComparison();
+}
+
+function buildComparison(){
+  const tbody=document.getElementById('cmpBody');
+  const rd=getRoundData();
+  if(!rd){tbody.innerHTML='<tr><td colspan="4" class="empty-state">No fixture data.</td></tr>';return;}
+  let agreedCount=0;
+  const rows=rd.matches.map(m=>{
+    const mc=runSim(m);
+    const elo=runElo(m);
+    const hn=TEAMS[m.h]?.name||m.h, an=TEAMS[m.a]?.name||m.a;
+    const mcWin=mc.hwp>=0.5?hn:an;
+    const eloWin=elo.hwp>=0.5?hn:an;
+    const mcPct=mc.hwp>=0.5?mc.hwp:mc.awp;
+    const eloPct=elo.hwp>=0.5?elo.hwp:elo.awp;
+    const agree=mcWin===eloWin;
+    if(agree)agreedCount++;
+    const mcConf=mcPct>=0.72?{t:'HIGH',c:'ch'}:mcPct>=0.58?{t:'MED',c:'cm'}:{t:'TOSS-UP',c:'cl'};
+    const eloConf=eloPct>=0.72?{t:'HIGH',c:'ch'}:eloPct>=0.58?{t:'MED',c:'cm'}:{t:'TOSS-UP',c:'cl'};
+    const rowClass=agree?(mcPct>=0.72&&eloPct>=0.72?'row-high':mcPct>=0.58&&eloPct>=0.58?'row-med':''):'';
+    return`<tr class="${rowClass}">
+      <td style="color:var(--muted);font-size:12px">${hn} vs ${an}</td>
+      <td>
+        <b>${mcWin}</b>
+        <span class="acc-sub">${(mcPct*100).toFixed(1)}% · ${mc.avgM} pts &nbsp;<span class="conf-pill ${mcConf.c}" style="font-size:9px;padding:1px 6px">${mcConf.t}</span></span>
+      </td>
+      <td>
+        <b style="color:var(--info)">${eloWin}</b>
+        <span class="acc-sub">${(eloPct*100).toFixed(1)}% · ${elo.avgM} pts &nbsp;<span class="conf-pill ${eloConf.c}" style="font-size:9px;padding:1px 6px">${eloConf.t}</span></span>
+      </td>
+      <td style="text-align:center"><span class="${agree?'cmp-agree':'cmp-disagree'}">${agree?'✅':'❌'}</span></td>
+    </tr>`;
+  });
+  const total=rd.matches.length;
+  rows.push(`<tr class="acc-summary-row">
+    <td colspan="2"><b>${agreedCount}/${total} matches — models agree (${Math.round(agreedCount/total*100)}%)</b></td>
+    <td colspan="2"></td>
+  </tr>`);
+  tbody.innerHTML=rows.join('');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1291,19 +1410,22 @@ function renderAccuracyResults(roundKey, results){
   const eloCorrect = results.filter(r=>r.elo.correct).length;
   const mcMAE      = Math.round(results.reduce((s,r)=>s+Math.abs(r.mc.margin -r.actual.margin),0)/total);
   const eloMAE     = Math.round(results.reduce((s,r)=>s+Math.abs(r.elo.margin-r.actual.margin),0)/total);
+  const merrClass=e=>e<=15?'merr-good':e<=30?'merr-med':'merr-bad';
   const rows = results.map(r=>{
     const mcWin  = r.mc.homeWin  ? r.hName : r.aName;
     const eloWin = r.elo.homeWin ? r.hName : r.aName;
     const actWin = r.actual.homeWin ? r.hName : r.aName;
+    const mcErr  = Math.abs(r.mc.margin  - r.actual.margin);
+    const eloErr = Math.abs(r.elo.margin - r.actual.margin);
     return `<tr>
       <td class="acc-match"><span class="acc-h">${r.hName}</span><span class="acc-vs">vs</span><span class="acc-a">${r.aName}</span></td>
       <td class="acc-model ${r.mc.correct?'acc-correct':'acc-wrong'}">
         ${r.mc.correct?'✅':'❌'} <b>${mcWin}</b>
-        <span class="acc-sub">${(r.mc.winPct*100).toFixed(0)}% win · pred margin ${r.mc.margin} pts</span>
+        <span class="acc-sub">${(r.mc.winPct*100).toFixed(0)}% win · pred ${r.mc.margin} pts <span class="merr ${merrClass(mcErr)}">±${mcErr}</span></span>
       </td>
       <td class="acc-model ${r.elo.correct?'acc-correct':'acc-wrong'}">
         ${r.elo.correct?'✅':'❌'} <b>${eloWin}</b>
-        <span class="acc-sub">${(r.elo.winPct*100).toFixed(0)}% win · pred margin ${r.elo.margin} pts</span>
+        <span class="acc-sub">${(r.elo.winPct*100).toFixed(0)}% win · pred ${r.elo.margin} pts <span class="merr ${merrClass(eloErr)}">±${eloErr}</span></span>
       </td>
       <td class="acc-actual">
         <b>${actWin}</b> by ${r.actual.margin} pts
@@ -1369,6 +1491,107 @@ function renderAccuracyTab(){
     opt.value=k; opt.textContent=`${rd.label} — ${rd.dates}`;
     sel.appendChild(opt);
   });
+}
+
+// ═══════════════════════════════════════════════════════
+// SEASON OVERVIEW — rolling accuracy chart
+// ═══════════════════════════════════════════════════════
+let seasonCache={};
+let seasonLoading=false;
+
+async function loadSeasonOverview(){
+  if(seasonLoading)return;
+  seasonLoading=true;
+  const btn=document.getElementById('seasonLoadBtn');
+  btn.disabled=true; btn.textContent='Loading…';
+  const content=document.getElementById('seasonContent');
+  content.innerHTML='<div class="empty-state" style="background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:20px">Fetching round results from Squiggle API…</div>';
+
+  const roundData=[];
+  for(const key of ROUND_KEYS){
+    if(!FIXTURE[key]) continue;
+    try{
+      let results;
+      if(accuracyCache[key]){
+        results=accuracyCache[key];
+      } else {
+        const games=await fetchSquiggleRound(key);
+        if(!games||games.length===0) continue;
+        results=analyseRound(key,games);
+        if(results.length===0) continue;
+        accuracyCache[key]=results;
+      }
+      const total=results.length;
+      const mcCorrect=results.filter(r=>r.mc.correct).length;
+      const eloCorrect=results.filter(r=>r.elo.correct).length;
+      const mcMAE=Math.round(results.reduce((s,r)=>s+Math.abs(r.mc.margin-r.actual.margin),0)/total);
+      const eloMAE=Math.round(results.reduce((s,r)=>s+Math.abs(r.elo.margin-r.actual.margin),0)/total);
+      roundData.push({key,label:FIXTURE[key].label,total,mcCorrect,eloCorrect,
+        mcPct:mcCorrect/total,eloPct:eloCorrect/total,mcMAE,eloMAE});
+    } catch(e){ continue; }
+  }
+
+  seasonLoading=false;
+  btn.disabled=false; btn.textContent='Refresh';
+  renderSeasonChart(roundData,content);
+}
+
+function renderSeasonChart(data,container){
+  if(!data.length){
+    container.innerHTML='<div class="empty-state" style="background:var(--card);border:1px solid var(--cb);border-radius:var(--r);padding:36px">No completed rounds found yet — check back once results are in.</div>';
+    return;
+  }
+  const totalMC=data.reduce((s,d)=>s+d.mcCorrect,0);
+  const totalELO=data.reduce((s,d)=>s+d.eloCorrect,0);
+  const totalGames=data.reduce((s,d)=>s+d.total,0);
+  const avgMcMAE=Math.round(data.reduce((s,d)=>s+d.mcMAE,0)/data.length);
+  const avgEloMAE=Math.round(data.reduce((s,d)=>s+d.eloMAE,0)/data.length);
+
+  const bars=data.map(d=>{
+    const shortLabel=d.key==='OR'?'OR':d.key==='5'?'GR':d.key==='7'?'ANZ':`R${d.key}`;
+    const mcH=Math.round(d.mcPct*100);
+    const eloH=Math.round(d.eloPct*100);
+    return`<div class="chart-round-col">
+      <div class="chart-pcts">
+        <span class="chart-pct-val" style="color:var(--gold)">${mcH}</span>
+        <span class="chart-pct-val" style="color:var(--info)">${eloH}</span>
+      </div>
+      <div class="chart-bars">
+        <div class="chart-bar chart-bar-mc" style="height:${mcH}px" title="${d.label} — MC: ${d.mcCorrect}/${d.total} (${mcH}%)"></div>
+        <div class="chart-bar chart-bar-elo" style="height:${eloH}px" title="${d.label} — ELO: ${d.eloCorrect}/${d.total} (${eloH}%)"></div>
+      </div>
+      <div class="chart-lbl">${shortLabel}</div>
+    </div>`;
+  }).join('');
+
+  const winnerMC=totalMC>totalELO,winnerELO=totalELO>totalMC;
+  container.innerHTML=`
+    <div class="season-chart-wrap">
+      <div class="chart-legend">
+        <span><span class="chart-legend-dot" style="background:var(--gold)"></span>Monte Carlo</span>
+        <span><span class="chart-legend-dot" style="background:var(--info)"></span>ELO Model</span>
+        <span style="color:var(--muted);margin-left:auto;font-size:11px">${data.length} round${data.length>1?'s':''} · ${totalGames} games analysed</span>
+      </div>
+      <div class="chart-rounds">${bars}</div>
+    </div>
+    <div class="season-summary">
+      <div class="season-stat">
+        <div class="season-stat-val" style="color:var(--gold)">${Math.round(totalMC/totalGames*100)}%</div>
+        <div class="season-stat-lbl">MC Season Accuracy${winnerMC?' 🏆':''}</div>
+      </div>
+      <div class="season-stat">
+        <div class="season-stat-val" style="color:var(--info)">${Math.round(totalELO/totalGames*100)}%</div>
+        <div class="season-stat-lbl">ELO Season Accuracy${winnerELO?' 🏆':''}</div>
+      </div>
+      <div class="season-stat">
+        <div class="season-stat-val" style="color:var(--gold)">${avgMcMAE} pts</div>
+        <div class="season-stat-lbl">MC Avg Margin Error</div>
+      </div>
+      <div class="season-stat">
+        <div class="season-stat-val" style="color:var(--info)">${avgEloMAE} pts</div>
+        <div class="season-stat-lbl">ELO Avg Margin Error</div>
+      </div>
+    </div>`;
 }
 
 // BOOT
