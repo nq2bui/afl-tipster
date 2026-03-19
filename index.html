@@ -145,6 +145,21 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
 @media(max-width:600px){header{padding:12px 14px}main{padding:14px}header .logo-text{font-size:18px}.nav-tabs{padding:0 14px}}
+
+/* ACCURACY TAB */
+.acc-controls{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.acc-table{width:100%;border-collapse:collapse;font-size:13px}
+.acc-table th{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 14px;border-bottom:1px solid var(--line);text-align:left}
+.acc-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top}
+.acc-match{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;white-space:nowrap}
+.acc-h{color:var(--gold)}.acc-a{color:var(--info)}.acc-vs{color:var(--muted);font-size:12px;margin:0 4px}
+.acc-model{font-weight:600;font-size:13px}
+.acc-correct{background:rgba(82,194,122,.07)}.acc-wrong{background:rgba(224,82,82,.07)}
+.acc-actual{font-weight:600}
+.acc-sub{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px}
+.acc-summary-row td{border-top:2px solid var(--line);padding:12px 14px;font-size:13px}
+.acc-winner{background:rgba(240,165,0,.10);color:var(--gold2)}
+.acc-note{font-size:11px;color:var(--muted);margin-top:14px}
 </style>
 </head>
 <body>
@@ -174,6 +189,7 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
   <button class="nav-tab" onclick="showTab('settings',this)">Edit Players</button>
   <button class="nav-tab" onclick="showTab('summary',this)">Tips Summary</button>
   <button class="nav-tab" onclick="showTab('ladder',this)">Club Ratings</button>
+  <button class="nav-tab" onclick="showTab('accuracy',this)">📊 Model Accuracy</button>
 </nav>
 
 <main>
@@ -202,6 +218,16 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 
   <div class="tab-panel" id="tab-ladder">
     <div class="ladder-grid" id="ladderGrid"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-accuracy">
+    <div class="acc-controls">
+      <select class="round-select" id="accRoundSel" style="max-width:260px"></select>
+      <button class="hdr-btn btn-gold" id="accLoadBtn" onclick="loadAccuracyRound()">Analyse</button>
+    </div>
+    <div id="accuracyContent">
+      <div class="empty-state">Select a completed round above and click Analyse to compare both model predictions against actual results.</div>
+    </div>
   </div>
 </main>
 
@@ -911,6 +937,7 @@ function showTab(name,el){
   if(name==='settings')renderSettings();
   if(name==='summary')updateSummary();
   if(name==='ladder')renderLadder();
+  if(name==='accuracy')renderAccuracyTab();
 }
 
 function changeRound(val){
@@ -928,6 +955,149 @@ function buildRoundSelector(){
     const opt=document.createElement('option');
     opt.value=k;opt.textContent=`${rd.label} — ${rd.dates}`;
     if(k===currentRound)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// MODEL ACCURACY — Predictions vs Actuals
+// ═══════════════════════════════════════════════════════
+const SQUIGGLE_TEAM_MAP = {
+  "Adelaide":"ADE","Brisbane Lions":"BRI","Carlton":"CAR","Collingwood":"COL",
+  "Essendon":"ESS","Fremantle":"FRE","Geelong":"GEE","Gold Coast":"GCS",
+  "Greater Western Sydney":"GWS","GWS Giants":"GWS","Hawthorn":"HAW",
+  "Melbourne":"MEL","North Melbourne":"NTH","Port Adelaide":"POR",
+  "Richmond":"RIC","St Kilda":"STK","Sydney":"SYD","Sydney Swans":"SYD",
+  "West Coast":"WCE","Western Bulldogs":"WBD",
+};
+
+let accuracyCache = {};
+
+async function fetchSquiggleRound(roundKey){
+  const sq = roundKey === "OR" ? 0 : parseInt(roundKey);
+  try {
+    const r = await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`,
+      {headers:{"User-Agent":"AFL-Tipster/1.0"}});
+    const data = await r.json();
+    return (data.games||[]).filter(g => g.complete === 100);
+  } catch(e){
+    console.error("Squiggle error:",e);
+    return null;
+  }
+}
+
+function analyseRound(roundKey, squiggleGames){
+  const fixture = FIXTURE[roundKey];
+  if(!fixture) return [];
+  const results = [];
+  for(const game of squiggleGames){
+    const hCode = SQUIGGLE_TEAM_MAP[game.hteam];
+    const aCode = SQUIGGLE_TEAM_MAP[game.ateam];
+    if(!hCode || !aCode) continue;
+    const fm = fixture.matches.find(m => m.h===hCode && m.a===aCode);
+    if(!fm) continue;
+    const mc  = runSim(fm);
+    const elo = runElo(fm);
+    const actualHomeWin = game.hscore > game.ascore;
+    const actualMargin  = Math.abs(game.hscore - game.ascore);
+    results.push({
+      h:hCode, a:aCode,
+      hName:TEAMS[hCode]?.name||hCode, aName:TEAMS[aCode]?.name||aCode,
+      mc :{homeWin:mc.hwp>=0.5,  winPct:mc.hwp>=0.5?mc.hwp:mc.awp,   margin:mc.avgM,  correct:(mc.hwp>=0.5)===actualHomeWin},
+      elo:{homeWin:elo.hwp>=0.5, winPct:elo.hwp>=0.5?elo.hwp:elo.awp, margin:elo.avgM, correct:(elo.hwp>=0.5)===actualHomeWin},
+      actual:{homeWin:actualHomeWin, margin:actualMargin, hScore:game.hscore, aScore:game.ascore},
+    });
+  }
+  return results;
+}
+
+function renderAccuracyResults(roundKey, results){
+  const container = document.getElementById("accuracyContent");
+  if(!results||results.length===0){
+    container.innerHTML='<div class="empty-state">No completed games found for this round. Check back once results are in.</div>';
+    return;
+  }
+  const total      = results.length;
+  const mcCorrect  = results.filter(r=>r.mc.correct).length;
+  const eloCorrect = results.filter(r=>r.elo.correct).length;
+  const mcMAE      = Math.round(results.reduce((s,r)=>s+Math.abs(r.mc.margin -r.actual.margin),0)/total);
+  const eloMAE     = Math.round(results.reduce((s,r)=>s+Math.abs(r.elo.margin-r.actual.margin),0)/total);
+  const rows = results.map(r=>{
+    const mcWin  = r.mc.homeWin  ? r.hName : r.aName;
+    const eloWin = r.elo.homeWin ? r.hName : r.aName;
+    const actWin = r.actual.homeWin ? r.hName : r.aName;
+    return `<tr>
+      <td class="acc-match"><span class="acc-h">${r.hName}</span><span class="acc-vs">vs</span><span class="acc-a">${r.aName}</span></td>
+      <td class="acc-model ${r.mc.correct?'acc-correct':'acc-wrong'}">
+        ${r.mc.correct?'✅':'❌'} <b>${mcWin}</b>
+        <span class="acc-sub">${(r.mc.winPct*100).toFixed(0)}% win · pred margin ${r.mc.margin} pts</span>
+      </td>
+      <td class="acc-model ${r.elo.correct?'acc-correct':'acc-wrong'}">
+        ${r.elo.correct?'✅':'❌'} <b>${eloWin}</b>
+        <span class="acc-sub">${(r.elo.winPct*100).toFixed(0)}% win · pred margin ${r.elo.margin} pts</span>
+      </td>
+      <td class="acc-actual">
+        <b>${actWin}</b> by ${r.actual.margin} pts
+        <span class="acc-sub">${r.h} ${r.actual.hScore} – ${r.actual.aScore} ${r.a}</span>
+      </td>
+    </tr>`;
+  }).join('');
+  const mcBetter  = mcCorrect > eloCorrect || (mcCorrect===eloCorrect && mcMAE<eloMAE);
+  const eloBetter = eloCorrect > mcCorrect || (eloCorrect===mcCorrect && eloMAE<mcMAE);
+  container.innerHTML=`
+    <table class="acc-table">
+      <thead><tr>
+        <th>Match</th>
+        <th>🎲 Monte Carlo</th>
+        <th>📊 ELO Model</th>
+        <th>Actual Result</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr class="acc-summary-row">
+        <td><b>Round Summary</b></td>
+        <td class="${mcBetter?'acc-winner':''}">
+          <b>${mcCorrect}/${total} correct (${Math.round(mcCorrect/total*100)}%)</b>
+          <span class="acc-sub">Margin MAE: ${mcMAE} pts</span>
+        </td>
+        <td class="${eloBetter?'acc-winner':''}">
+          <b>${eloCorrect}/${total} correct (${Math.round(eloCorrect/total*100)}%)</b>
+          <span class="acc-sub">Margin MAE: ${eloMAE} pts</span>
+        </td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+    <p class="acc-note">Results sourced live from the Squiggle API · Predictions use current team ratings &amp; injury data</p>
+  `;
+}
+
+async function loadAccuracyRound(){
+  const sel = document.getElementById("accRoundSel");
+  const btn = document.getElementById("accLoadBtn");
+  const roundKey = sel.value;
+  btn.disabled=true; btn.textContent="Loading…";
+  document.getElementById("accuracyContent").innerHTML='<div class="empty-state">Fetching results from Squiggle API…</div>';
+  if(accuracyCache[roundKey]){
+    renderAccuracyResults(roundKey, accuracyCache[roundKey]);
+  } else {
+    const games = await fetchSquiggleRound(roundKey);
+    if(games===null){
+      document.getElementById("accuracyContent").innerHTML='<div class="empty-state">Could not fetch results — check your connection and try again.</div>';
+    } else {
+      const results = analyseRound(roundKey, games);
+      accuracyCache[roundKey] = results;
+      renderAccuracyResults(roundKey, results);
+    }
+  }
+  btn.disabled=false; btn.textContent="Analyse";
+}
+
+function renderAccuracyTab(){
+  const sel = document.getElementById("accRoundSel");
+  if(sel.options.length>0) return;
+  ROUND_KEYS.forEach(k=>{
+    const rd=FIXTURE[k]; if(!rd) return;
+    const opt=document.createElement("option");
+    opt.value=k; opt.textContent=`${rd.label} — ${rd.dates}`;
     sel.appendChild(opt);
   });
 }
