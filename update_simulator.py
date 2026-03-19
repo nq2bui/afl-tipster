@@ -58,11 +58,13 @@ def sc_to_rating(price, avg_score, games_played, min_games=2):
     """Convert SuperCoach price / avg score to a 50–99 simulator rating.
 
     Prefers avg_score once the player has played enough games (more accurate).
-    Falls back to price-based rating pre-season or for new players.
+    Falls back to price-based rating if available (price=0 skips that branch).
+    The SuperCoach API currently returns previous_average / previous_games only —
+    price is not exposed, so pass price=0.
 
     Scale reference:
       Avg score:  40 → 50,  85 → 74,  130 → 99
-      Price:    $117k → 50,  $750k → 74,  $1.4M → 99
+      Price:    $117k → 50,  $750k → 74,  $1.4M → 99 (future use)
     """
     SC_MIN_PRICE = 117_300
     SC_MAX_PRICE = 1_400_000
@@ -250,15 +252,13 @@ def fetch_supercoach_data():
                 if surname not in injuries_map[team_code]:
                     injuries_map[team_code].append(surname)
 
-        # ── Rating from SC price / avg score ──
-        # Try common field name variants across SC API versions
-        price  = p.get("price") or p.get("cost") or p.get("value") or 0
-        avg    = (p.get("avg_points") or p.get("average") or
-                  p.get("stats", {}).get("avg_points") or 0)
-        games  = (p.get("games_played") or p.get("total_games") or
-                  p.get("stats", {}).get("games_played") or 0)
+        # ── Rating from SC previous season avg score ──
+        # API returns previous_average / previous_games (current season stats
+        # appear mid-season once games are played)
+        avg   = p.get("previous_average") or 0
+        games = p.get("previous_games") or 0
 
-        rating = sc_to_rating(price, avg, games)
+        rating = sc_to_rating(0, avg, games)
         if rating:
             ratings_map[(team_code, surname)] = rating
 
