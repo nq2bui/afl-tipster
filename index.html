@@ -977,11 +977,12 @@ function renderCards(){
     const card=document.createElement('div');
     card.className='match-card';card.id=`card-${id}`;
     const kickoff=gameTimesMap[`${m.h}-${m.a}`];
+    const wxTag=weatherMap[`${m.h}-${m.a}`]||m.weather||'';
     card.innerHTML=`
       <div class="card-venue">
         <span class="venue-text">📍 ${m.venue}${kickoff?` · 🕐 ${kickoff} AEST`:''}</span>
         <div style="display:flex;gap:5px">
-          ${m.weather?`<span class="tag tag-wx">${m.weather}</span>`:''}
+          ${wxTag?`<span class="tag tag-wx">${wxTag}</span>`:''}
           ${hasInj?`<span class="tag tag-inj" data-inj='${injData}'>⚠ injuries</span>`:''}
         </div>
       </div>
@@ -1397,33 +1398,112 @@ function showTab(name,el){
   if(name==='accuracy')renderAccuracyTab();
 }
 
+const VENUE_COORDS={
+  'MCG':{lat:-37.8197,lon:144.9834,tz:'Australia/Melbourne'},
+  'Marvel':{lat:-37.8166,lon:144.9476,tz:'Australia/Melbourne'},
+  'SCG':{lat:-33.8915,lon:151.2247,tz:'Australia/Sydney'},
+  'GMHBA':{lat:-38.1571,lon:144.3552,tz:'Australia/Melbourne'},
+  'Optus Stadium':{lat:-31.9512,lon:115.8874,tz:'Australia/Perth'},
+  'Adelaide Oval':{lat:-34.9158,lon:138.5961,tz:'Australia/Adelaide'},
+  'Gabba':{lat:-27.4858,lon:153.0381,tz:'Australia/Brisbane'},
+  'People First Stadium':{lat:-28.0040,lon:153.3948,tz:'Australia/Brisbane'},
+  'Engie Stadium':{lat:-33.8468,lon:150.9942,tz:'Australia/Sydney'},
+  'UTAS Stadium':{lat:-41.4249,lon:147.1240,tz:'Australia/Hobart'},
+  'Canberra':{lat:-35.3163,lon:149.1386,tz:'Australia/Sydney'},
+  'Barossa Park':{lat:-34.5333,lon:138.9500,tz:'Australia/Adelaide'},
+  'Norwood Oval':{lat:-34.9232,lon:138.6407,tz:'Australia/Adelaide'},
+  'TIO Stadium':{lat:-12.3906,lon:130.9049,tz:'Australia/Darwin'},
+  'TIO Park':{lat:-12.3906,lon:130.9049,tz:'Australia/Darwin'},
+  'Hobart':{lat:-42.8821,lon:147.3272,tz:'Australia/Hobart'},
+};
+function wmoEmoji(code){
+  if(code===0)return'☀';
+  if(code<=2)return'⛅';
+  if(code<=3)return'🌤';
+  if(code<=48)return'🌫';
+  if(code<=55)return'🌦';
+  if(code<=67)return'🌧';
+  if(code<=77)return'❄';
+  if(code<=82)return'🌦';
+  return'⛈';
+}
+
 let gameTimesMap={};
+let gameDatesMap={};
+let weatherMap={};
+
 async function loadGameTimes(roundKey){
   const sq=roundKey==="OR"?0:parseInt(roundKey);
   try{
     const r=await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`,{headers:{"User-Agent":"AFL-Tipster/1.0"}});
     const data=await r.json();
     gameTimesMap={};
+    gameDatesMap={};
     for(const g of (data.games||[])){
       const hCode=SQUIGGLE_TEAM_MAP[g.hteam];
       const aCode=SQUIGGLE_TEAM_MAP[g.ateam];
       if(!hCode||!aCode||!g.date) continue;
+      const key=`${hCode}-${aCode}`;
+      gameDatesMap[key]=g.date.split(' ')[0];
       const timePart=(g.date.split(' ')[1]||'').substring(0,5);
       if(!timePart) continue;
       const[hh,mm]=timePart.split(':');
       let h=parseInt(hh);
       const ampm=h>=12?'PM':'AM';
       h=h%12||12;
-      gameTimesMap[`${hCode}-${aCode}`]=`${h}:${mm} ${ampm}`;
+      gameTimesMap[key]=`${h}:${mm} ${ampm}`;
     }
     renderCards();
+    loadWeather(roundKey);
   }catch(e){console.error('Game times fetch failed:',e);}
+}
+
+async function loadWeather(roundKey){
+  const rd=FIXTURE[roundKey];
+  if(!rd) return;
+  weatherMap={};
+  const byVenue={};
+  for(const m of rd.matches){
+    const key=`${m.h}-${m.a}`;
+    const date=gameDatesMap[key];
+    if(!date) continue;
+    const venueName=m.venue.split(' · ')[0];
+    const coords=VENUE_COORDS[venueName];
+    if(!coords) continue;
+    if(!byVenue[venueName]) byVenue[venueName]={coords,keys:[]};
+    byVenue[venueName].keys.push({key,date});
+  }
+  const fetches=Object.entries(byVenue).map(async([vname,info])=>{
+    const dates=info.keys.map(k=>k.date);
+    const minDate=dates.reduce((a,b)=>a<b?a:b);
+    const maxDate=dates.reduce((a,b)=>a>b?a:b);
+    try{
+      const url=`https://api.open-meteo.com/v1/forecast?latitude=${info.coords.lat}&longitude=${info.coords.lon}&daily=weathercode,temperature_2m_max,precipitation_probability_max&timezone=${info.coords.tz}&start_date=${minDate}&end_date=${maxDate}`;
+      const d=await (await fetch(url)).json();
+      if(!d.daily) return;
+      const daily={};
+      d.daily.time.forEach((dt,i)=>{
+        daily[dt]={code:d.daily.weathercode[i],temp:d.daily.temperature_2m_max[i],rain:d.daily.precipitation_probability_max[i]};
+      });
+      for(const{key,date}of info.keys){
+        const w=daily[date];
+        if(!w||w.temp==null) continue;
+        let wx=`${wmoEmoji(w.code)} ${Math.round(w.temp)}°C`;
+        if(w.rain!=null&&w.rain>=20) wx+=` ${w.rain}%🌧`;
+        weatherMap[key]=wx;
+      }
+    }catch(e){console.error('Weather fetch failed:',vname,e);}
+  });
+  await Promise.all(fetches);
+  renderCards();
 }
 
 function changeRound(val){
   currentRound=val;
   simResults={};
   gameTimesMap={};
+  gameDatesMap={};
+  weatherMap={};
   const rd=FIXTURE[val];
   document.getElementById('roundBadge').textContent=rd?rd.label:'—';
   renderCards();
