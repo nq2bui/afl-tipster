@@ -109,6 +109,20 @@ main{position:relative;z-index:5;padding:22px 24px}
 .model-pill{display:inline-flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-top:8px;margin-left:6px;background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid var(--line)}
 .model-select{background:var(--surface3);border:1px solid var(--cb);color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;max-width:180px}
 .model-select option{background:var(--grass)}
+/* FIRST GOALSCORER */
+.fgs-section{margin-top:10px;padding-top:8px;border-top:1px solid var(--faint)}
+.fgs-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.fgs-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--faint)}
+.fgs-row:last-child{border-bottom:none}
+.fgs-rank{font-size:10px;color:var(--muted);width:14px;text-align:center;flex-shrink:0}
+.fgs-name{font-size:12px;font-weight:600;flex:1}
+.fgs-pos{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:.04em}
+.fgs-pos-fwd{background:rgba(240,165,0,0.15);color:var(--gold)}
+.fgs-pos-mid{background:rgba(82,164,224,0.15);color:var(--info)}
+.fgs-pos-def{background:rgba(82,194,122,0.15);color:var(--success)}
+.fgs-pos-rck{background:rgba(255,255,255,0.08);color:var(--muted)}
+.fgs-pct{font-size:12px;font-weight:700;min-width:38px;text-align:right}
+.fgs-bar{height:3px;border-radius:2px;margin-top:2px}
 .ch{background:rgba(82,194,122,.14);color:var(--success);border:1px solid rgba(82,194,122,.28)}
 .cm{background:rgba(240,165,0,.14);color:var(--gold);border:1px solid rgba(240,165,0,.28)}
 .cl{background:rgba(82,164,224,.14);color:var(--info);border:1px solid rgba(82,164,224,.2)}
@@ -1015,6 +1029,31 @@ function renderCards(){
   });
 }
 
+function firstGoalScorers(ht,at,hwp){
+  // Positional base weights — AFL data shows FWDs score ~50% of first goals
+  const POS_W={FWD:1.0,MID:0.55,RCK:0.22,DEF:0.15};
+  const teamH=TEAMS[ht],teamA=TEAMS[at];
+  if(!teamH||!teamA) return[];
+  // Team first-scoring probability derived from win probability
+  // (winning team scores first more often, but not as extreme as overall win %)
+  const tfH=Math.max(0.1,Math.min(0.9,0.5+(hwp-0.5)*0.65));
+  const tfA=1-tfH;
+  const candidates=[];
+  for(const p of teamH.players.filter(p=>!p.out)){
+    const w=(POS_W[p.pos]||0.15)*Math.pow(p.r/74,2.5)*tfH;
+    candidates.push({name:p.n,team:ht,pos:p.pos,w});
+  }
+  for(const p of teamA.players.filter(p=>!p.out)){
+    const w=(POS_W[p.pos]||0.15)*Math.pow(p.r/74,2.5)*tfA;
+    candidates.push({name:p.n,team:at,pos:p.pos,w});
+  }
+  const total=candidates.reduce((s,c)=>s+c.w,0);
+  if(!total) return[];
+  candidates.forEach(c=>c.prob=c.w/total);
+  candidates.sort((a,b)=>b.prob-a.prob);
+  return candidates.slice(0,5);
+}
+
 function showRes(id,ht,at,r){
   const hn=TEAMS[ht]?TEAMS[ht].name:ht;
   const an=TEAMS[at]?TEAMS[at].name:at;
@@ -1051,6 +1090,22 @@ function showRes(id,ht,at,r){
       <div class="dist-rlbls"><span>0–15</span><span>15–30</span><span>30–45</span><span>45–60</span><span>60+</span></div>
     </div>
     <span class="conf-pill ${conf.c}">${conf.t}</span><span class="model-pill">${r.model==='elo'?'📊 ELO Model':'🎲 Monte Carlo'}</span>
+    ${(()=>{
+      const fgs=firstGoalScorers(ht,at,r.hwp);
+      if(!fgs.length) return'';
+      const posClass=p=>({FWD:'fgs-pos-fwd',MID:'fgs-pos-mid',DEF:'fgs-pos-def',RCK:'fgs-pos-rck'}[p]||'fgs-pos-def');
+      const topProb=fgs[0].prob;
+      return`<div class="fgs-section">
+        <div class="fgs-title">🎯 First Goalscorer</div>
+        ${fgs.map((c,i)=>`<div class="fgs-row">
+          <span class="fgs-rank">${i+1}</span>
+          <span class="fgs-name">${c.name}</span>
+          <span class="fgs-pos ${posClass(c.pos)}">${c.pos}</span>
+          <div style="flex:1;margin:0 6px"><div class="fgs-bar" style="width:${(c.prob/topProb)*100}%;background:${c.team===ht?'rgba(240,165,0,0.4)':'rgba(82,164,224,0.4)'}"></div></div>
+          <span class="fgs-pct" style="color:${c.team===ht?'var(--gold)':'var(--info)'}">${(c.prob*100).toFixed(1)}%</span>
+        </div>`).join('')}
+      </div>`;
+    })()}
   `;
   panel.classList.add('show');
   document.getElementById(`card-${id}`).classList.add('simulated');
