@@ -976,9 +976,10 @@ function renderCards(){
     const injData=JSON.stringify({h:m.h,a:m.a,hi:hInjPlayers,ai:aInjPlayers});
     const card=document.createElement('div');
     card.className='match-card';card.id=`card-${id}`;
+    const kickoff=gameTimesMap[`${m.h}-${m.a}`];
     card.innerHTML=`
       <div class="card-venue">
-        <span class="venue-text">📍 ${m.venue}</span>
+        <span class="venue-text">📍 ${m.venue}${kickoff?` · 🕐 ${kickoff} AEST`:''}</span>
         <div style="display:flex;gap:5px">
           ${m.weather?`<span class="tag tag-wx">${m.weather}</span>`:''}
           ${hasInj?`<span class="tag tag-inj" data-inj='${injData}'>⚠ injuries</span>`:''}
@@ -1276,7 +1277,7 @@ function updateSummary(){
       <td>
         <div style="color:var(--muted);font-size:12px;margin-bottom:2px">${hn} vs ${an}</div>
         <div class="form-row">
-          <span class="form-team-lbl">H2H</span>${formBadges(ht,at)}
+          <span class="form-team-lbl">Last 5 H2H</span>${formBadges(ht,at)}
         </div>
       </td>
       <td><span class="tip-pill">${wname}</span></td>
@@ -1396,12 +1397,37 @@ function showTab(name,el){
   if(name==='accuracy')renderAccuracyTab();
 }
 
+let gameTimesMap={};
+async function loadGameTimes(roundKey){
+  const sq=roundKey==="OR"?0:parseInt(roundKey);
+  try{
+    const r=await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`,{headers:{"User-Agent":"AFL-Tipster/1.0"}});
+    const data=await r.json();
+    gameTimesMap={};
+    for(const g of (data.games||[])){
+      const hCode=SQUIGGLE_TEAM_MAP[g.hteam];
+      const aCode=SQUIGGLE_TEAM_MAP[g.ateam];
+      if(!hCode||!aCode||!g.date) continue;
+      const timePart=(g.date.split(' ')[1]||'').substring(0,5);
+      if(!timePart) continue;
+      const[hh,mm]=timePart.split(':');
+      let h=parseInt(hh);
+      const ampm=h>=12?'PM':'AM';
+      h=h%12||12;
+      gameTimesMap[`${hCode}-${aCode}`]=`${h}:${mm} ${ampm}`;
+    }
+    renderCards();
+  }catch(e){console.error('Game times fetch failed:',e);}
+}
+
 function changeRound(val){
   currentRound=val;
   simResults={};
+  gameTimesMap={};
   const rd=FIXTURE[val];
   document.getElementById('roundBadge').textContent=rd?rd.label:'—';
   renderCards();
+  loadGameTimes(val);
 }
 
 function buildRoundSelector(){
@@ -1665,6 +1691,7 @@ function renderSeasonChart(data,container){
 // BOOT
 buildRoundSelector();
 loadFormData(); // prefetch in background so form is ready when Summary tab opens
+loadGameTimes(currentRound); // fetch kick-off times from Squiggle, will re-render cards when ready
 document.getElementById('roundBadge').textContent=FIXTURE[currentRound].label;
 renderCards();
 
