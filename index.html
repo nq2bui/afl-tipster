@@ -190,6 +190,11 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 .theme-toggle{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--cb);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;flex-shrink:0}
 .theme-toggle:hover{background:var(--surface3);color:var(--white)}
 
+/* INJURY TOOLTIP */
+#injTooltip{position:fixed;z-index:9999;pointer-events:none;display:none;background:var(--surface3);border:1px solid rgba(224,82,82,0.35);border-radius:8px;padding:8px 12px;box-shadow:0 6px 24px rgba(0,0,0,0.5);min-width:140px;max-width:220px}
+#injTooltip .itt-row{font-size:11px;color:var(--white);padding:2px 0;white-space:nowrap}
+#injTooltip .itt-team{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--danger);margin-bottom:2px}
+
 /* AVATAR HOVER PREVIEW */
 .p-avatar{cursor:zoom-in}
 #avatarPreview{position:fixed;z-index:9999;pointer-events:none;display:none;border-radius:50%;overflow:hidden;width:110px;height:110px;border:2px solid var(--gold);box-shadow:0 6px 28px rgba(0,0,0,0.55)}
@@ -956,9 +961,10 @@ function renderCards(){
     const ht=TEAMS[m.h],at=TEAMS[m.a];
     const hs=teamStr(m.h),as=teamStr(m.a);
     const mxS=Math.max(hs,as,80);
-    const hInj=ht&&ht.players.filter(p=>p.out).length>0;
-    const aInj=at&&at.players.filter(p=>p.out).length>0;
-    const hasInj=hInj||aInj;
+    const hInjPlayers=ht?ht.players.filter(p=>p.out).map(p=>p.n):[];
+    const aInjPlayers=at?at.players.filter(p=>p.out).map(p=>p.n):[];
+    const hasInj=hInjPlayers.length>0||aInjPlayers.length>0;
+    const injData=JSON.stringify({h:m.h,a:m.a,hi:hInjPlayers,ai:aInjPlayers});
     const card=document.createElement('div');
     card.className='match-card';card.id=`card-${id}`;
     card.innerHTML=`
@@ -966,7 +972,7 @@ function renderCards(){
         <span class="venue-text">📍 ${m.venue}</span>
         <div style="display:flex;gap:5px">
           ${m.weather?`<span class="tag tag-wx">${m.weather}</span>`:''}
-          ${hasInj?`<span class="tag tag-inj">⚠ injuries</span>`:''}
+          ${hasInj?`<span class="tag tag-inj" data-inj='${injData}'>⚠ injuries</span>`:''}
         </div>
       </div>
       <div class="teams-section">
@@ -1598,6 +1604,50 @@ function renderSeasonChart(data,container){
 buildRoundSelector();
 document.getElementById('roundBadge').textContent=FIXTURE[currentRound].label;
 renderCards();
+
+// ═══════════════════════════════════════════════════════
+// INJURY TAG TOOLTIP
+// ═══════════════════════════════════════════════════════
+(function(){
+  const tt=document.createElement('div');
+  tt.id='injTooltip';
+  document.body.appendChild(tt);
+  let active=false;
+
+  document.addEventListener('mouseover',e=>{
+    const tag=e.target.closest('.tag-inj');
+    if(!tag||!tag.dataset.inj) return;
+    const d=JSON.parse(tag.dataset.inj);
+    let html='';
+    if(d.hi&&d.hi.length){
+      html+=`<div class="itt-team">${d.h}</div>`;
+      d.hi.forEach(n=>{ html+=`<div class="itt-row">⚠ ${n}</div>`; });
+    }
+    if(d.ai&&d.ai.length){
+      if(html) html+='<div style="height:5px"></div>';
+      html+=`<div class="itt-team">${d.a}</div>`;
+      d.ai.forEach(n=>{ html+=`<div class="itt-row">⚠ ${n}</div>`; });
+    }
+    tt.innerHTML=html;
+    tt.style.display='block';
+    active=true;
+  });
+
+  document.addEventListener('mouseout',e=>{
+    if(e.target.closest('.tag-inj')){ tt.style.display='none'; active=false; }
+  });
+
+  document.addEventListener('mousemove',e=>{
+    if(!active) return;
+    const margin=12,tw=tt.offsetWidth,th=tt.offsetHeight;
+    const vw=window.innerWidth,vh=window.innerHeight;
+    let left=e.clientX+margin, top=e.clientY+margin;
+    if(left+tw>vw) left=e.clientX-tw-margin;
+    if(top+th>vh)  top=e.clientY-th-margin;
+    tt.style.left=left+'px';
+    tt.style.top=top+'px';
+  });
+})();
 
 // ═══════════════════════════════════════════════════════
 // AVATAR HOVER PREVIEW
