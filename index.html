@@ -190,6 +190,15 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 .theme-toggle{width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--cb);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;flex-shrink:0}
 .theme-toggle:hover{background:var(--surface3);color:var(--white)}
 
+/* FORM BADGES */
+.form-row{display:flex;align-items:center;gap:3px;margin-top:5px;flex-wrap:wrap}
+.form-dot{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:4px;font-size:9px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.02em}
+.fd-w{background:rgba(82,194,122,.18);color:var(--success);border:1px solid rgba(82,194,122,.3)}
+.fd-l{background:rgba(224,82,82,.15);color:var(--danger);border:1px solid rgba(224,82,82,.25)}
+.fd-d{background:rgba(255,255,255,.07);color:var(--muted);border:1px solid var(--cb)}
+.form-team-lbl{font-size:9px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-right:2px;font-family:'Barlow Condensed',sans-serif;font-weight:700}
+.form-sep{width:1px;height:14px;background:var(--cb);margin:0 4px}
+
 /* INJURY TOOLTIP */
 #injTooltip{position:fixed;z-index:9999;pointer-events:none;display:none;background:var(--surface3);border:1px solid rgba(224,82,82,0.35);border-radius:8px;padding:8px 12px;box-shadow:0 6px 24px rgba(0,0,0,0.5);min-width:140px;max-width:220px}
 #injTooltip .itt-row{font-size:11px;color:var(--white);padding:2px 0;white-space:nowrap}
@@ -1203,6 +1212,50 @@ function refreshCardStr(){
 }
 
 // ═══════════════════════════════════════════════════════
+// RECENT FORM
+// ═══════════════════════════════════════════════════════
+let formCache={};
+let formLoaded=false;
+
+async function loadFormData(){
+  if(formLoaded) return;
+  try{
+    const res=await fetch('https://api.squiggle.com.au/?q=games;year=2026',{headers:{'User-Agent':'AFL-Tipster/1.0'}});
+    const data=await res.json();
+    const games=(data.games||[]).filter(g=>g.complete===100);
+    const byTeam={};
+    for(const g of games){
+      const hCode=SQUIGGLE_TEAM_MAP[g.hteam];
+      const aCode=SQUIGGLE_TEAM_MAP[g.ateam];
+      if(!hCode||!aCode) continue;
+      const hWin=g.hscore>g.ascore, draw=g.hscore===g.ascore;
+      if(!byTeam[hCode]) byTeam[hCode]=[];
+      if(!byTeam[aCode]) byTeam[aCode]=[];
+      byTeam[hCode].push({result:draw?'D':hWin?'W':'L', date:g.date, round:g.roundname});
+      byTeam[aCode].push({result:draw?'D':hWin?'L':'W', date:g.date, round:g.roundname});
+    }
+    // Sort oldest→newest, keep last 5
+    for(const [code,results] of Object.entries(byTeam)){
+      results.sort((a,b)=>a.date.localeCompare(b.date));
+      formCache[code]=results.slice(-5);
+    }
+    formLoaded=true;
+    updateSummary(); // re-render with form data now available
+  }catch(e){
+    console.error('Form fetch failed:',e);
+  }
+}
+
+function formBadges(teamCode){
+  const results=formCache[teamCode];
+  if(!results||!results.length) return '<span style="color:var(--muted);font-size:10px;opacity:.5">—</span>';
+  return results.map(r=>{
+    const cls=r.result==='W'?'fd-w':r.result==='L'?'fd-l':'fd-d';
+    return`<span class="form-dot ${cls}" title="${r.round}: ${r.result}">${r.result}</span>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
 // SUMMARY
 // ═══════════════════════════════════════════════════════
 function updateSummary(){
@@ -1216,7 +1269,14 @@ function updateSummary(){
     const conf=wpct>=0.72?{t:'HIGH',c:'ch'}:wpct>=0.58?{t:'MED',c:'cm'}:{t:'TOSS-UP',c:'cl'};
     const rowClass=wpct>=0.72?'row-high':wpct>=0.58?'row-med':'';
     return`<tr class="${rowClass}">
-      <td style="color:var(--muted);font-size:12px">${hn} vs ${an}</td>
+      <td>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:2px">${hn} vs ${an}</div>
+        <div class="form-row">
+          <span class="form-team-lbl">${ht}</span>${formBadges(ht)}
+          <span class="form-sep"></span>
+          <span class="form-team-lbl">${at}</span>${formBadges(at)}
+        </div>
+      </td>
       <td><span class="tip-pill">${wname}</span></td>
       <td><span style="font-size:13px">${(wpct*100).toFixed(1)}%</span>
         <div class="mini-bar"><div class="mini-fill" style="width:${wpct*100}%"></div></div>
@@ -1329,7 +1389,7 @@ function showTab(name,el){
   document.getElementById(`tab-${name}`).classList.add('active');
   el.classList.add('active');
   if(name==='settings')renderSettings();
-  if(name==='summary')updateSummary();
+  if(name==='summary'){loadFormData();updateSummary();}
   if(name==='ladder')renderLadder();
   if(name==='accuracy')renderAccuracyTab();
 }
@@ -1602,6 +1662,7 @@ function renderSeasonChart(data,container){
 
 // BOOT
 buildRoundSelector();
+loadFormData(); // prefetch in background so form is ready when Summary tab opens
 document.getElementById('roundBadge').textContent=FIXTURE[currentRound].label;
 renderCards();
 
