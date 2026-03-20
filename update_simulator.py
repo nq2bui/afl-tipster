@@ -8,6 +8,7 @@ Merges both sources and patches index.html automatically.
 
 import requests
 import re
+import statistics
 from datetime import datetime
 
 # ── CONFIG ──────────────────────────────────────────────────────────────────
@@ -54,32 +55,60 @@ SC_ABBREV_MAP = {
 }
 
 
-def sc_to_rating(price, avg_score, games_played, min_games=2):
-    """Convert SuperCoach price / avg score to a 50–99 simulator rating.
+def build_position_stats(players, min_games=5):
+    """Compute mean and stdev of SC avg score per position from the full player pool.
 
-    Prefers avg_score once the player has played enough games (more accurate).
-    Falls back to price-based rating if available (price=0 skips that branch).
-    The SuperCoach API currently returns previous_average / previous_games only —
-    price is not exposed, so pass price=0.
+    Uses all players with enough games to give reliable position benchmarks.
+    These are used to normalise individual ratings against position peers.
 
-    Scale reference:
-      Avg score:  40 → 50,  85 → 74,  130 → 99
-      Price:    $117k → 50,  $750k → 74,  $1.4M → 99 (future use)
+    Returns {position: {"mean": float, "stdev": float}}
     """
-    SC_MIN_PRICE = 117_300
-    SC_MAX_PRICE = 1_400_000
-    SC_MIN_AVG   = 40.0
-    SC_MAX_AVG   = 130.0
+    from collections import defaultdict
+    buckets = defaultdict(list)
+    for p in players:
+        avg   = p.get("previous_average") or 0
+        games = p.get("previous_games") or 0
+        pos   = (p.get("positions") or [{}])[0].get("position", "")
+        if avg and games >= min_games and pos in ("MID", "FWD", "DEF", "RUC"):
+            buckets[pos].append(avg)
 
-    if avg_score and games_played and games_played >= min_games:
-        t = max(0.0, min(1.0, (avg_score - SC_MIN_AVG) / (SC_MAX_AVG - SC_MIN_AVG)))
-        return max(50, min(99, round(50 + t * 49)))
+    pos_stats = {}
+    for pos, avgs in buckets.items():
+        if len(avgs) >= 5:
+            pos_stats[pos] = {
+                "mean":  statistics.mean(avgs),
+                "stdev": statistics.pstdev(avgs) or 1.0,  # pstdev = full population
+            }
+            print(f"  Position stats  {pos}: mean={pos_stats[pos]['mean']:.1f}  "
+                  f"stdev={pos_stats[pos]['stdev']:.1f}  n={len(avgs)}")
+    return pos_stats
 
-    if price and price >= SC_MIN_PRICE:
-        t = max(0.0, min(1.0, (price - SC_MIN_PRICE) / (SC_MAX_PRICE - SC_MIN_PRICE)))
-        return max(50, min(99, round(50 + t * 49)))
 
-    return None  # not enough data to rate
+def sc_to_rating(avg, games, position, pos_stats, min_games=2):
+    """Convert SC avg score to a 50–99 simulator rating using positional normalisation.
+
+    A Z-score measures how far above/below the position average the player is.
+    This means a DEF averaging 75 rates much higher than a MID averaging 75,
+    because 75 is elite for a defender but below average for a midfielder.
+
+      rating = clamp(74 + z * 10,  50, 99)
+
+    74 = league-average player on our scale. Each standard deviation = 10 rating pts.
+    Falls back to a raw linear mapping if position stats are unavailable.
+    """
+    if not avg or not games or games < min_games:
+        return None
+
+    # API uses "RUC" — normalise to match build_position_stats key
+    pos_key = "RUC" if position in ("RUC", "RCK") else position
+    stats = pos_stats.get(pos_key)
+    if stats:
+        z = (avg - stats["mean"]) / stats["stdev"]
+        return max(50, min(99, round(74 + z * 10)))
+
+    # Fallback: raw linear map  avg 40→50, 130→99
+    t = max(0.0, min(1.0, (avg - 40.0) / 90.0))
+    return max(50, min(99, round(50 + t * 49)))
 
 
 def squiggle_get(query_params):
@@ -214,8 +243,8 @@ def fetch_supercoach_data():
     Returns a tuple:
       injuries_map: {team_code: [surnames]} — players confirmed OUT this week.
                     Only populated after teams named (Thu–Sat). Bye entries skipped.
-      ratings_map:  {(team_code, surname): rating} — 50–99 rating derived from
-                    avg score (when ≥2 games played) or price (pre-season fallback).
+      ratings_map:  {(team_code, surname): rating} — 50–99 positionally-normalised
+                    rating derived from previous season avg score.
     """
     try:
         r = requests.get(SUPERCOACH_URL, headers={
@@ -228,6 +257,11 @@ def fetch_supercoach_data():
         print(f"  Could not fetch SuperCoach data: {e}")
         return {}, {}
 
+    # ── Pass 1: build position benchmarks from the full player pool ──
+    print("  Computing position benchmarks...")
+    pos_stats = build_position_stats(players)
+
+    # ── Pass 2: injuries + normalised ratings ──
     injuries_map = {}
     ratings_map  = {}
     skipped_bye  = 0
@@ -252,13 +286,12 @@ def fetch_supercoach_data():
                 if surname not in injuries_map[team_code]:
                     injuries_map[team_code].append(surname)
 
-        # ── Rating from SC previous season avg score ──
-        # API returns previous_average / previous_games (current season stats
-        # appear mid-season once games are played)
-        avg   = p.get("previous_average") or 0
-        games = p.get("previous_games") or 0
+        # ── Positionally-normalised rating ──
+        avg      = p.get("previous_average") or 0
+        games    = p.get("previous_games") or 0
+        position = (p.get("positions") or [{}])[0].get("position", "")
 
-        rating = sc_to_rating(0, avg, games)
+        rating = sc_to_rating(avg, games, position, pos_stats)
         if rating:
             ratings_map[(team_code, surname)] = rating
 
