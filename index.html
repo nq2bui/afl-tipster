@@ -1066,32 +1066,60 @@ function renderCards(){
   });
 }
 
-function firstGoalScorers(ht,at,hwp){
-  // Positional base weights — AFL data shows FWDs score ~50% of first goals
-  const POS_W={FWD:1.0,MID:0.55,RCK:0.22,DEF:0.15};
+function firstGoalScorers(ht,at,hwp,hga=0){
   const teamH=TEAMS[ht],teamA=TEAMS[at];
   if(!teamH||!teamA) return[];
-  // Team first-scoring probability derived from win probability
-  // (winning team scores first more often, but not as extreme as overall win %)
-  const tfH=Math.max(0.1,Math.min(0.9,0.5+(hwp-0.5)*0.65));
+
+  // ── STAGE 1: Team first-scoring probability ──────────────────────────────
+  // Winning teams score first more often (correlation ~0.70, not 1.0)
+  // HGA adds extra home advantage: teams on home ground win clearances earlier
+  // Max HGA contribution capped at +7% so it doesn't dominate
+  const hgaBoost=Math.min(0.07,hga*0.008);
+  const tfH=Math.max(0.12,Math.min(0.88,0.5+(hwp-0.5)*0.70+hgaBoost));
   const tfA=1-tfH;
+
+  // ── STAGE 2: Player-level share ───────────────────────────────────────────
+  // AFL historical first-goalscorer distribution (approximate):
+  // Key FWDs ~38%, Small FWDs ~18%, MIDs ~30%, RUCs ~9%, DEFs ~5%
+  // We use a single FWD weight and differentiate via rating tiers below
+  const POS_W={FWD:1.0,MID:0.45,RCK:0.28,DEF:0.08};
+
+  // Cubic rating scaling: much sharper elite/average separation than ^2.5
+  // A r=90 player gets (90/74)^3 = 1.82x vs an average r=74 player
+  const rW=r=>Math.pow(r/74,3);
+
+  // Forward tier premium — proxy for role:
+  //   r≥85 FWD → likely key forward (aerial marks, set-shot in first Q)  = +30%
+  //   r≥75 FWD → likely lead-up or mobile forward                        = +10%
+  //   r< 75 FWD → small/pocket forward, lower first-goal likelihood
+  const fwdTier=(pos,r)=>pos==='FWD'?(r>=85?1.30:r>=75?1.10:1.0):1.0;
+
   const candidates=[];
   for(const p of teamH.players.filter(p=>!p.out)){
-    const w=(POS_W[p.pos]||0.15)*Math.pow(p.r/74,2.5)*tfH;
+    const w=POS_W[p.pos||'MID']*rW(p.r)*fwdTier(p.pos,p.r)*tfH;
     candidates.push({name:p.n,team:ht,pos:p.pos,w});
   }
   for(const p of teamA.players.filter(p=>!p.out)){
-    const w=(POS_W[p.pos]||0.15)*Math.pow(p.r/74,2.5)*tfA;
+    const w=POS_W[p.pos||'MID']*rW(p.r)*fwdTier(p.pos,p.r)*tfA;
     candidates.push({name:p.n,team:at,pos:p.pos,w});
   }
-  const total=candidates.reduce((s,c)=>s+c.w,0);
+
+  // ── DILUTION: untracked players ───────────────────────────────────────────
+  // We model ~12 of 22 players per side. The remaining ~10 share some probability.
+  // Without this, top picks show ~14% which is unrealistically high.
+  // Model untracked pool as 10 average-rated (r≈68) mixed-position players per team.
+  const untrackedUnitW=POS_W.MID*rW(68)*0.85;
+  const hPool=10*untrackedUnitW*tfH;
+  const aPool=10*untrackedUnitW*tfA;
+
+  const total=candidates.reduce((s,c)=>s+c.w,0)+hPool+aPool;
   if(!total) return[];
   candidates.forEach(c=>c.prob=c.w/total);
   candidates.sort((a,b)=>b.prob-a.prob);
   return candidates.slice(0,5);
 }
 
-function showRes(id,ht,at,r){
+function showRes(id,ht,at,r,hga=0){
   const hn=TEAMS[ht]?TEAMS[ht].name:ht;
   const an=TEAMS[at]?TEAMS[at].name:at;
   const wname=r.hwp>=0.5?hn:an;
@@ -1128,7 +1156,7 @@ function showRes(id,ht,at,r){
     </div>
     <span class="conf-pill ${conf.c}">${conf.t}</span><span class="model-pill">${r.model==='elo'?'📊 ELO Model':'🎲 Monte Carlo'}</span>
     ${(()=>{
-      const fgs=firstGoalScorers(ht,at,r.hwp);
+      const fgs=firstGoalScorers(ht,at,r.hwp,hga);
       if(!fgs.length) return'';
       const posClass=p=>({FWD:'fgs-pos-fwd',MID:'fgs-pos-mid',DEF:'fgs-pos-def',RCK:'fgs-pos-rck'}[p]||'fgs-pos-def');
       const topProb=fgs[0].prob;
@@ -1175,8 +1203,8 @@ function simMatch(id,ht,at,hga,h2h){
   if(btn){btn.textContent='⟳ Simulating…';btn.disabled=true;}
   setTimeout(()=>{
     const r=model==='elo'?runElo({h:ht,a:at,hga,h2h}):runSim({h:ht,a:at,hga,h2h});
-    simResults[id]={ht,at,r};
-    showRes(id,ht,at,r);
+    simResults[id]={ht,at,r,hga};
+    showRes(id,ht,at,r,hga);
     if(btn)btn.disabled=false;
     updateSummary();
   },60);
