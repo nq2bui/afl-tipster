@@ -1220,9 +1220,9 @@ let formLoaded=false;
 async function loadFormData(){
   if(formLoaded) return;
   try{
-    // Fetch 2024+2025+2026 in parallel to get enough H2H history
+    // Fetch 2022–2026 in parallel — need 5 years as some pairs only meet once per season
     const jsons=await Promise.all(
-      [2024,2025,2026].map(y=>
+      [2022,2023,2024,2025,2026].map(y=>
         fetch(`https://api.squiggle.com.au/?q=games;year=${y}`,{headers:{'User-Agent':'AFL-Tipster/1.0'}}).then(r=>r.json())
       )
     );
