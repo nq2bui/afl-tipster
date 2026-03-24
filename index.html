@@ -323,7 +323,7 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
     <div class="sum-wrap" id="sumWrap">
       <table class="sum-table">
         <thead><tr>
-          <th>Match</th><th>Tip</th><th>Win %</th><th>Margin</th><th>Implied</th><th>Sportsbet</th><th>Confidence</th>
+          <th>Match</th><th>Tip</th><th>Win %</th><th>Margin</th><th>🎲/📊 Implied</th><th><img src="https://www.google.com/s2/favicons?sz=16&domain=sportsbet.com.au" style="width:13px;height:13px;border-radius:2px;vertical-align:middle" alt="SB"> Sportsbet</th><th>Confidence</th>
         </tr></thead>
         <tbody id="sumBody"><tr><td colspan="7" class="empty-state">Run simulations to see your tips.</td></tr></tbody>
       </table>
@@ -957,14 +957,17 @@ const SPORTSBET_ODDS = {"GEE-ADE":{"h":1.38,"a":3.06},"COL-GWS":{"h":1.5,"a":2.6
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
-function buildOddsHtml(ht,at,hwp,awp){
+const SB_LOGO=`<img src="https://www.google.com/s2/favicons?sz=16&domain=sportsbet.com.au" style="width:13px;height:13px;border-radius:2px;vertical-align:middle" alt="SB">`;
+function modelIcon(m){return m==='elo'?'📊':'🎲';}
+function buildOddsHtml(ht,at,hwp,awp,model){
   const hn=TEAMS[ht]?.name||ht, an=TEAMS[at]?.name||at;
   const od=getOddsData(ht,at);
   const hImp=fmtOdds(hwp), aImp=fmtOdds(awp);
+  const mi=modelIcon(model);
   const badge=(e)=>{if(e===null)return'';const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`<span style="font-size:10px;font-weight:700;color:${clr}">${e>=0?'+':''}${e.toFixed(1)}%</span>`;};
-  if(!od)return`<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap"><span style="font-weight:600">Implied:</span><span style="color:var(--gold)">${hn} ${hImp}</span><span>|</span><span style="color:var(--info)">${an} ${aImp}</span></div>`;
+  if(!od)return`<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap"><span style="font-weight:600">${mi} Implied:</span><span style="color:var(--gold)">${hn} ${hImp}</span><span>|</span><span style="color:var(--info)">${an} ${aImp}</span></div>`;
   const hE=calcEdge(hwp,od.h), aE=calcEdge(awp,od.a);
-  return`<div style="border-top:1px solid var(--border);padding:8px 0 2px"><div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px"><img src="https://www.google.com/s2/favicons?sz=16&domain=sportsbet.com.au" style="width:13px;height:13px;border-radius:2px" alt="">Implied vs Sportsbet</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;font-size:12px"><span style="color:var(--gold);font-weight:600">${hn}</span><span style="color:var(--muted)">implied ${hImp}</span><span style="color:var(--muted)">→</span><span style="font-weight:700">$${od.h.toFixed(2)}</span>${badge(hE)}</div><div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><span style="color:var(--info);font-weight:600">${an}</span><span style="color:var(--muted)">implied ${aImp}</span><span style="color:var(--muted)">→</span><span style="font-weight:700">$${od.a.toFixed(2)}</span>${badge(aE)}</div></div>`;
+  return`<div style="border-top:1px solid var(--border);padding:8px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px"><span style="color:var(--gold);font-weight:600">${hn}</span><span style="color:var(--muted)">${mi} ${hImp}</span><span>${SB_LOGO} $${od.h.toFixed(2)}</span>${badge(hE)}</div><div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><span style="color:var(--info);font-weight:600">${an}</span><span style="color:var(--muted)">${mi} ${aImp}</span><span>${SB_LOGO} $${od.a.toFixed(2)}</span>${badge(aE)}</div></div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1157,7 +1160,7 @@ function showRes(id,ht,at,r,hga=0,hAvail=[],aAvail=[]){
       <div class="stat-box"><div class="stat-val">${r.avgM}</div><div class="stat-lbl">avg margin</div></div>
       <div class="stat-box"><div class="stat-val" style="color:var(--info)">${(r.awp*100).toFixed(1)}%</div><div class="stat-lbl">${at} win%</div></div>
     </div>
-    ${buildOddsHtml(ht,at,r.hwp,r.awp)}
+    ${buildOddsHtml(ht,at,r.hwp,r.awp,r.model)}
     <div class="dist-section">
       <div class="dist-title">Margin distribution</div>
       <div class="dist-bars">${dist}</div>
@@ -1417,8 +1420,8 @@ function updateSummary(){
         <div class="mini-bar"><div class="mini-fill" style="width:${wpct*100}%"></div></div>
       </td>
       <td style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">${r.avgM} pts</td>
-      <td style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">${fmtOdds(wpct)}</td>
-      <td>${(()=>{const od=getOddsData(ht,at);const sbOdds=od?(r.hwp>=0.5?od.h:od.a):null;if(!sbOdds)return'<span style="color:var(--muted)">—</span>';const e=calcEdge(wpct,sbOdds);const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`<span style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">$${sbOdds.toFixed(2)}</span><br><span style="font-size:10px;font-weight:700;color:${clr}">${e>=0?'+':''}${e.toFixed(1)}%</span>`;})()}</td>
+      <td><span style="font-size:14px">${modelIcon(r.model)}</span><br><span style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">${fmtOdds(wpct)}</span></td>
+      <td>${(()=>{const od=getOddsData(ht,at);const sbOdds=od?(r.hwp>=0.5?od.h:od.a):null;if(!sbOdds)return'<span style="color:var(--muted)">—</span>';const e=calcEdge(wpct,sbOdds);const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`${SB_LOGO}<br><span style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">$${sbOdds.toFixed(2)}</span><br><span style="font-size:10px;font-weight:700;color:${clr}">${e>=0?'+':''}${e.toFixed(1)}%</span>`;})()}</td>
       <td><span class="conf-pill ${conf.c}" style="font-size:10px;padding:2px 8px">${conf.t}</span></td>
     </tr>`;
   }).join('');
