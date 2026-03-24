@@ -323,9 +323,9 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
     <div class="sum-wrap" id="sumWrap">
       <table class="sum-table">
         <thead><tr>
-          <th>Match</th><th>Tip</th><th>Win %</th><th>Margin</th><th>Confidence</th>
+          <th>Match</th><th>Tip</th><th>Win %</th><th>Margin</th><th>Implied</th><th>Sportsbet</th><th>Confidence</th>
         </tr></thead>
-        <tbody id="sumBody"><tr><td colspan="5" class="empty-state">Run simulations to see your tips.</td></tr></tbody>
+        <tbody id="sumBody"><tr><td colspan="7" class="empty-state">Run simulations to see your tips.</td></tr></tbody>
       </table>
     </div>
     <div class="cmp-wrap" id="cmpWrap">
@@ -334,9 +334,10 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
           <th>Match</th>
           <th>🎲 Monte Carlo</th>
           <th>📊 ELO Model</th>
+          <th>💰 Sportsbet</th>
           <th style="text-align:center">Agree?</th>
         </tr></thead>
-        <tbody id="cmpBody"><tr><td colspan="4" class="empty-state">Switch to Compare Models to see both predictions.</td></tr></tbody>
+        <tbody id="cmpBody"><tr><td colspan="5" class="empty-state">Switch to Compare Models to see both predictions.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -951,6 +952,20 @@ function detectCurrentRound() {
 
 let currentRound = detectCurrentRound();
 let simResults = {};
+// SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
+const SPORTSBET_ODDS = {"GEE-ADE":{"h":1.38,"a":3.06},"COL-GWS":{"h":1.5,"a":2.61},"STK-BRI":{"h":2.49,"a":1.54},"FRE-RIC":{"h":1.04,"a":11.0},"ESS-NTH":{"h":2.6,"a":1.5},"POR-WCE":{"h":1.22,"a":4.3},"CAR-MEL":{"h":1.97,"a":1.87}};
+function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
+function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
+function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
+function buildOddsHtml(ht,at,hwp,awp){
+  const hn=TEAMS[ht]?.name||ht, an=TEAMS[at]?.name||at;
+  const od=getOddsData(ht,at);
+  const hImp=fmtOdds(hwp), aImp=fmtOdds(awp);
+  const badge=(e)=>{if(e===null)return'';const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`<span style="font-size:10px;font-weight:700;color:${clr}">${e>=0?'+':''}${e.toFixed(1)}%</span>`;};
+  if(!od)return`<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap"><span style="font-weight:600">Implied:</span><span style="color:var(--gold)">${hn} ${hImp}</span><span>|</span><span style="color:var(--info)">${an} ${aImp}</span></div>`;
+  const hE=calcEdge(hwp,od.h), aE=calcEdge(awp,od.a);
+  return`<div style="border-top:1px solid var(--border);padding:8px 0 2px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">💰 Implied vs Sportsbet</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;font-size:12px"><span style="color:var(--gold);font-weight:600">${hn}</span><span style="color:var(--muted)">implied ${hImp}</span><span style="color:var(--muted)">→</span><span style="font-weight:700">$${od.h.toFixed(2)}</span>${badge(hE)}</div><div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><span style="color:var(--info);font-weight:600">${an}</span><span style="color:var(--muted)">implied ${aImp}</span><span style="color:var(--muted)">→</span><span style="font-weight:700">$${od.a.toFixed(2)}</span>${badge(aE)}</div></div>`;
+}
 
 // ═══════════════════════════════════════════════════════
 // THEME
@@ -1058,6 +1073,7 @@ function renderCards(){
           <div class="str-wrap"><div class="str-fill a" id="sta-${id}" style="width:${(as/mxS)*100}%"></div></div>
         </div>
       </div>
+      ${(()=>{const od=getOddsData(m.h,m.a);if(!od)return'';const hn=ht?ht.name:m.h,an=at?at.name:m.a;return`<div style="display:flex;justify-content:space-around;padding:8px 12px;border-top:1px solid var(--border);font-size:12px"><div style="text-align:center"><div style="color:var(--muted);font-size:10px;margin-bottom:2px">💰 SPORTSBET</div><span style="color:var(--gold);font-weight:600">${hn}</span> <b>$${od.h.toFixed(2)}</b></div><div style="color:var(--muted);align-self:center">|</div><div style="text-align:center"><div style="color:var(--muted);font-size:10px;margin-bottom:2px">&nbsp;</div><span style="color:var(--info);font-weight:600">${an}</span> <b>$${od.a.toFixed(2)}</b></div></div>`;})()}
       <div class="sim-action">
         <button class="sim-btn" id="btn-${id}" onclick="simMatch('${id}','${m.h}','${m.a}',${m.hga},${m.h2h})">▶ Run Simulation</button>
       </div>
@@ -1141,6 +1157,7 @@ function showRes(id,ht,at,r,hga=0,hAvail=[],aAvail=[]){
       <div class="stat-box"><div class="stat-val">${r.avgM}</div><div class="stat-lbl">avg margin</div></div>
       <div class="stat-box"><div class="stat-val" style="color:var(--info)">${(r.awp*100).toFixed(1)}%</div><div class="stat-lbl">${at} win%</div></div>
     </div>
+    ${buildOddsHtml(ht,at,r.hwp,r.awp)}
     <div class="dist-section">
       <div class="dist-title">Margin distribution</div>
       <div class="dist-bars">${dist}</div>
@@ -1381,7 +1398,7 @@ function formBadges(ht,at){
 function updateSummary(){
   const tbody=document.getElementById('sumBody');
   const keys=Object.keys(simResults);
-  if(!keys.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">Run simulations to see your tips.</td></tr>';return;}
+  if(!keys.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">Run simulations to see your tips.</td></tr>';return;}
   tbody.innerHTML=keys.map(id=>{
     const{ht,at,r}=simResults[id];
     const hn=TEAMS[ht]?TEAMS[ht].name:ht,an=TEAMS[at]?TEAMS[at].name:at;
@@ -1400,6 +1417,8 @@ function updateSummary(){
         <div class="mini-bar"><div class="mini-fill" style="width:${wpct*100}%"></div></div>
       </td>
       <td style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">${r.avgM} pts</td>
+      <td style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">${fmtOdds(wpct)}</td>
+      <td>${(()=>{const od=getOddsData(ht,at);const sbOdds=od?(r.hwp>=0.5?od.h:od.a):null;if(!sbOdds)return'<span style="color:var(--muted)">—</span>';const e=calcEdge(wpct,sbOdds);const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`<span style="font-family:'Barlow Condensed';font-size:18px;font-weight:700">$${sbOdds.toFixed(2)}</span><br><span style="font-size:10px;font-weight:700;color:${clr}">${e>=0?'+':''}${e.toFixed(1)}%</span>`;})()}</td>
       <td><span class="conf-pill ${conf.c}" style="font-size:10px;padding:2px 8px">${conf.t}</span></td>
     </tr>`;
   }).join('');
@@ -1421,7 +1440,7 @@ function setSumView(v){
 function buildComparison(){
   const tbody=document.getElementById('cmpBody');
   const rd=getRoundData();
-  if(!rd){tbody.innerHTML='<tr><td colspan="4" class="empty-state">No fixture data.</td></tr>';return;}
+  if(!rd){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No fixture data.</td></tr>';return;}
   let agreedCount=0;
   const rows=rd.matches.map(m=>{
     const mc=runSim(m);
@@ -1440,19 +1459,20 @@ function buildComparison(){
       <td style="color:var(--muted);font-size:12px">${hn} vs ${an}</td>
       <td>
         <b>${mcWin}</b>
-        <span class="acc-sub">${(mcPct*100).toFixed(1)}% · ${mc.avgM} pts &nbsp;<span class="conf-pill ${mcConf.c}" style="font-size:9px;padding:1px 6px">${mcConf.t}</span></span>
+        <span class="acc-sub">${(mcPct*100).toFixed(1)}% · ${mc.avgM} pts · implied <b style="color:var(--text)">${fmtOdds(mcPct)}</b>&nbsp;<span class="conf-pill ${mcConf.c}" style="font-size:9px;padding:1px 6px">${mcConf.t}</span></span>
       </td>
       <td>
         <b style="color:var(--info)">${eloWin}</b>
-        <span class="acc-sub">${(eloPct*100).toFixed(1)}% · ${elo.avgM} pts &nbsp;<span class="conf-pill ${eloConf.c}" style="font-size:9px;padding:1px 6px">${eloConf.t}</span></span>
+        <span class="acc-sub">${(eloPct*100).toFixed(1)}% · ${elo.avgM} pts · implied <b style="color:var(--text)">${fmtOdds(eloPct)}</b>&nbsp;<span class="conf-pill ${eloConf.c}" style="font-size:9px;padding:1px 6px">${eloConf.t}</span></span>
       </td>
+      <td>${(()=>{const od=getOddsData(m.h,m.a);if(!od)return'<span style="color:var(--muted)">—</span>';const hn=TEAMS[m.h]?.name||m.h,an=TEAMS[m.a]?.name||m.a;const mcE=calcEdge(mc.hwp>=0.5?mc.hwp:mc.awp,mc.hwp>=0.5?od.h:od.a);const eloE=calcEdge(elo.hwp>=0.5?elo.hwp:elo.awp,elo.hwp>=0.5?od.h:od.a);const b=(lbl,e)=>{const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`<span style="font-size:10px;color:${clr}">${lbl}: ${e>=0?'+':''}${e.toFixed(1)}%</span>`;};return`<div style="font-size:11px"><div style="margin-bottom:3px">${hn} <b>$${od.h.toFixed(2)}</b> / ${an} <b>$${od.a.toFixed(2)}</b></div><div>${b('MC',mcE)}&nbsp;&nbsp;${b('ELO',eloE)}</div></div>`;})()}</td>
       <td style="text-align:center"><span class="${agree?'cmp-agree':'cmp-disagree'}">${agree?'✅':'❌'}</span></td>
     </tr>`;
   });
   const total=rd.matches.length;
   rows.push(`<tr class="acc-summary-row">
     <td colspan="2"><b>${agreedCount}/${total} matches — models agree (${Math.round(agreedCount/total*100)}%)</b></td>
-    <td colspan="2"></td>
+    <td colspan="3"></td>
   </tr>`);
   tbody.innerHTML=rows.join('');
 }

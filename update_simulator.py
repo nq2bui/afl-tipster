@@ -16,6 +16,7 @@ SQUIGGLE_BASE = "https://api.squiggle.com.au/"
 SQUIGGLE_HEADERS = {"User-Agent": "AFL-Tipster-Bot/1.0 (github.com/your-username/afl-tipster)"}
 YEAR = 2026
 
+
 FOOTYWIRE_INJURY_URL = "https://www.footywire.com/afl/footy/injury_list"
 
 # SuperCoach public API — no auth required (updated when teams named Thu-Sat)
@@ -332,8 +333,8 @@ def calculate_form_mult(standings, short):
     return round(max(0.82, min(1.18, base + pct_adj)), 3)
 
 
-def patch_index_html(round_num, round_games, standings, injured_map, ratings_map=None):
-    """Read index.html, patch TEAMS formMult and player out flags, and write back."""
+def patch_index_html(round_num, round_games, standings, injured_map, ratings_map=None, odds_map=None):
+    """Read index.html, patch TEAMS formMult, player out flags, and Sportsbet odds, then write back."""
     with open("index.html", "r", encoding="utf-8") as f:
         html = f.read()
 
@@ -412,10 +413,129 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
                 html = html[:s_start] + section + html[s_end:]
         print(f"  Updated {updated} player ratings from SuperCoach")
 
+    # ── 5. Patch Sportsbet odds ──
+    if odds_map:
+        import json as _json
+        odds_json = _json.dumps(odds_map, separators=(',', ':'))
+        new_html = re.sub(
+            r'const SPORTSBET_ODDS = \{[^;]*\};',
+            f'const SPORTSBET_ODDS = {odds_json};',
+            html,
+        )
+        if new_html != html:
+            html = new_html
+            print(f"  Patched SPORTSBET_ODDS with {len(odds_map)} matches")
+        else:
+            print("  WARNING: SPORTSBET_ODDS pattern not found in index.html")
+
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
 
     print("index.html updated successfully")
+
+
+def fetch_sportsbet_odds():
+    """Scrape H2H match-winner odds for upcoming AFL matches from Sportsbet.
+
+    Parses window.__PRELOADED_STATE__ JSON embedded in the AFL page HTML.
+    Uses curl_cffi with Chrome impersonation to bypass Cloudflare.
+    Returns {"HOME-AWAY": {"h": float, "a": float}} keyed by our team codes.
+    """
+    import json as _json
+    import re as _re
+
+    # Sportsbet team name → our 3-letter codes
+    SB_TEAM_MAP = {
+        "Adelaide Crows": "ADE", "Brisbane Lions": "BRI", "Carlton": "CAR",
+        "Collingwood": "COL", "Essendon": "ESS", "Fremantle": "FRE",
+        "Geelong Cats": "GEE", "Gold Coast Suns": "GCS", "GWS GIANTS": "GWS",
+        "Hawthorn": "HAW", "Melbourne": "MEL", "North Melbourne": "NTH",
+        "Port Adelaide": "POR", "Richmond": "RIC", "St Kilda": "STK",
+        "Sydney Swans": "SYD", "Western Bulldogs": "WBD", "West Coast Eagles": "WCE",
+    }
+
+    try:
+        from curl_cffi.requests import Session
+    except ImportError:
+        print("  curl_cffi not installed — skipping Sportsbet scrape")
+        return {}
+
+    url = "https://www.sportsbet.com.au/betting/australian-rules/afl"
+    try:
+        with Session(impersonate="chrome120") as s:
+            r = s.get(url, timeout=30)
+            r.raise_for_status()
+            html = r.text
+    except Exception as e:
+        print(f"  Sportsbet fetch error: {e}")
+        return {}
+
+    # Extract __PRELOADED_STATE__ JSON
+    scripts = _re.findall(r'<script[^>]*>(.*?)</script>', html, _re.DOTALL)
+    state = None
+    for sc in scripts:
+        if "__PRELOADED_STATE__" in sc:
+            m = _re.match(r'window\.__PRELOADED_STATE__\s*=\s*', sc.strip())
+            if m:
+                try:
+                    state, _ = _json.JSONDecoder().raw_decode(sc.strip()[m.end():])
+                except Exception:
+                    pass
+            break
+
+    if not state:
+        print("  Could not parse Sportsbet page data")
+        return {}
+
+    sb = state.get("entities", {}).get("sportsbook", {})
+    evts   = sb.get("events", {})
+    mkts   = sb.get("markets", {})
+    outs   = sb.get("outcomes", {})
+
+    def get(store, key):
+        return store.get(str(key)) or store.get(key)
+
+    def decimal_price(wp):
+        return round(wp["num"] / wp["den"] + 1, 2)
+
+    odds_map = {}
+    for ev in evts.values():
+        p1 = ev.get("participant1", "")
+        p2 = ev.get("participant2", "")
+        if not p1 or not p2:
+            continue
+        home_code = SB_TEAM_MAP.get(p1)
+        away_code = SB_TEAM_MAP.get(p2)
+        if not home_code or not away_code:
+            continue
+
+        # Find the Head to Head market (marketSort == "HH")
+        for mid in ev.get("marketIds", []):
+            mkt = get(mkts, mid)
+            if not mkt or mkt.get("marketSort") != "HH":
+                continue
+            oc_ids = mkt.get("outcomeIds", [])
+            if len(oc_ids) != 2:
+                continue
+            o1 = get(outs, oc_ids[0])
+            o2 = get(outs, oc_ids[1])
+            if not o1 or not o2:
+                continue
+            # Match outcome names to home/away
+            name_map = {o1["name"]: o1, o2["name"]: o2}
+            home_oc = name_map.get(p1)
+            away_oc = name_map.get(p2)
+            if not home_oc or not away_oc:
+                continue
+            h_price = decimal_price(home_oc["winPrice"])
+            a_price = decimal_price(away_oc["winPrice"])
+            key = f"{home_code}-{away_code}"
+            odds_map[key] = {"h": h_price, "a": a_price}
+            print(f"  {home_code} ${h_price}  vs  {away_code} ${a_price}")
+            break
+
+    print(f"  Scraped Sportsbet H2H odds for {len(odds_map)} matches")
+    return odds_map
 
 
 def main():
@@ -453,9 +573,13 @@ def main():
     total = sum(len(v) for v in injured_map.values())
     print(f"\nCombined: {total} players marked OUT across {len(injured_map)} teams")
 
-    # 6. Patch index.html
+    # 6. Fetch Sportsbet odds (requires ODDS_API_KEY)
+    print("\nFetching Sportsbet odds...")
+    odds_map = fetch_sportsbet_odds()
+
+    # 7. Patch index.html
     print(f"\nPatching index.html for Round {round_num}...")
-    patch_index_html(round_num, round_games, standings, injured_map, ratings_map)
+    patch_index_html(round_num, round_games, standings, injured_map, ratings_map, odds_map)
 
     print("\nAll done! Changes committed by GitHub Actions.\n")
 
