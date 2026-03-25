@@ -64,6 +64,9 @@ main{position:relative;z-index:5;padding:22px 24px}
 .match-card{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);overflow:hidden;transition:border-color .25s}
 .match-card:hover{border-color:rgba(240,165,0,0.22)}
 .match-card.simulated{border-color:rgba(240,165,0,0.28)}
+.match-card.conf-high{border-color:rgba(82,194,122,0.6)}
+.match-card.conf-mid{border-color:rgba(240,165,0,0.5)}
+.match-card.conf-low{border-color:rgba(224,82,82,0.5)}
 .card-venue{padding:9px 14px 7px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--faint)}
 .venue-text{font-size:11px;color:var(--muted)}
 .tag{font-size:10px;padding:2px 7px;border-radius:20px}
@@ -1185,7 +1188,9 @@ function showRes(id,ht,at,r,hga=0,hAvail=[],aAvail=[]){
     })()}
   `;
   panel.classList.add('show');
-  document.getElementById(`card-${id}`).classList.add('simulated');
+  const card=document.getElementById(`card-${id}`);
+  card.classList.remove('conf-high','conf-mid','conf-low');
+  card.classList.add('simulated', wpct>=0.72?'conf-high':wpct>=0.58?'conf-mid':'conf-low');
   const btn=document.getElementById(`btn-${id}`);
   if(btn)btn.textContent='↺ Re-simulate';
 }
