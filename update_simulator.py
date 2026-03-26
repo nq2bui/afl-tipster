@@ -268,23 +268,42 @@ def squiggle_get(query_params):
 
 
 def get_current_round():
-    """Determine the current/upcoming round from Squiggle."""
+    """Determine the current/upcoming round from Squiggle, with AFL API fallback."""
     data = squiggle_get(f"games;year={YEAR}")
-    if not data or "games" not in data:
-        print("Could not fetch games from Squiggle.")
-        return None, None
+    if data and "games" in data:
+        games    = data["games"]
+        upcoming = [g for g in games if g.get("complete", 100) < 100]
+        if upcoming:
+            upcoming.sort(key=lambda g: g.get("date", "9999"))
+            next_round  = upcoming[0].get("round")
+            round_games = [g for g in upcoming if g.get("round") == next_round]
+            print(f"Detected upcoming round: {next_round} ({len(round_games)} games)")
+            return next_round, round_games
 
-    games = data["games"]
-    upcoming = [g for g in games if g.get("complete", 100) < 100]
-    if not upcoming:
-        print("No upcoming games found.")
+    # Squiggle unavailable — fall back to AFL API
+    print("  Squiggle unavailable — falling back to AFL API for round detection...")
+    try:
+        r = requests.get(
+            f"{AFL_API_BASE}/matches",
+            params={"competitionId": 1, "compSeasonId": COMP_SEASON_ID, "pageSize": 50},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        matches  = r.json().get("matches", [])
+        now      = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+        upcoming = [m for m in matches if (m.get("status", "") not in ("CONCLUDED", "COMPLETE")
+                                           and m.get("utcStartTime", "9999") >= now[:10])]
+        if not upcoming:
+            print("  No upcoming matches found via AFL API")
+            return None, None
+        upcoming.sort(key=lambda m: m.get("utcStartTime", "9999"))
+        next_round = upcoming[0].get("round", {}).get("roundNumber")
+        print(f"  AFL API: detected round {next_round}")
+        return next_round, upcoming
+    except Exception as e:
+        print(f"  AFL API round detection failed: {e}")
         return None, None
-
-    upcoming.sort(key=lambda g: g.get("date", "9999"))
-    next_round = upcoming[0].get("round")
-    round_games = [g for g in upcoming if g.get("round") == next_round]
-    print(f"Detected upcoming round: {next_round} ({len(round_games)} games)")
-    return next_round, round_games
 
 
 def get_standings():
