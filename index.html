@@ -179,11 +179,28 @@ main{position:relative;z-index:5;padding:22px 24px}
 .cs-box{background:var(--surface);border-radius:6px;padding:5px;text-align:center}
 .cs-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white)}
 .cs-lbl{font-size:9px;color:var(--muted)}
+.section-hdr{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.section-hdr::after{content:'';flex:1;height:1px;background:var(--line)}
+.afl-ladder-wrap{background:var(--card);border:1px solid var(--cb);border-radius:var(--r);overflow:hidden;margin-top:28px}
+.afl-ladder-table{width:100%;border-collapse:collapse}
+.afl-ladder-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.afl-ladder-table th:not(:first-child):not(:nth-child(2)){text-align:center}
+.afl-ladder-table td{padding:10px 14px;border-bottom:1px solid var(--faint);font-size:13px;vertical-align:middle}
+.afl-ladder-table td:not(:first-child):not(:nth-child(2)){text-align:center}
+.afl-ladder-table tr:last-child td{border-bottom:none}
+.afl-ladder-table tr:hover td{background:var(--surface2)}
+.afl-ladder-table .pos{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--muted);width:32px}
+.afl-ladder-table .team-cell{display:flex;align-items:center;gap:8px}
+.afl-ladder-table .team-logo{width:26px;height:26px;object-fit:contain;flex-shrink:0}
+.afl-ladder-table .team-label{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700}
+.afl-ladder-table .pts{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold)}
+.finals-line td{border-top:2px solid rgba(240,165,0,0.4)!important}
+@media(max-width:768px){.afl-ladder-table th:nth-child(n+6),.afl-ladder-table td:nth-child(n+6){display:none}}
 
 footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);text-align:center}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
-@media(max-width:768px){header{padding:12px 14px}main{padding:14px}header .logo-text{font-size:18px}.nav-tabs{padding:0 14px}.match-grid{grid-template-columns:1fr}.ladder-grid{grid-template-columns:1fr}}
+@media(max-width:768px){header{padding:12px 14px}main{padding:14px}header .logo-text{font-size:18px}.nav-tabs{padding:0 14px}.match-grid{grid-template-columns:1fr}.ladder-grid{grid-template-columns:1fr}.afl-ladder-table th:nth-child(n+6),.afl-ladder-table td:nth-child(n+6){display:none}}
 
 /* ACCURACY TAB */
 .acc-controls{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
@@ -344,7 +361,22 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
   </div>
 
   <div class="tab-panel" id="tab-ladder">
+    <div class="section-hdr">Club Ratings</div>
     <div class="ladder-grid" id="ladderGrid"></div>
+    <div class="afl-ladder-wrap">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="section-hdr" style="margin:0;border:none">AFL Ladder</div>
+        <span id="ladderUpdated" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <table class="afl-ladder-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>D</th><th>%</th><th>Pts</th>
+          </tr>
+        </thead>
+        <tbody id="aflLadderBody"><tr><td colspan="8" class="empty-state">Loading ladder…</td></tr></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="tab-panel" id="tab-accuracy">
@@ -1520,6 +1552,41 @@ function renderLadder(){
     `;
     grid.appendChild(card);
   });
+  renderAFLLadder();
+}
+
+function renderAFLLadder(){
+  const tbody=document.getElementById('aflLadderBody');
+  const updatedEl=document.getElementById('ladderUpdated');
+  tbody.innerHTML='<tr><td colspan="8" class="empty-state">Loading…</td></tr>';
+  fetch('https://api.squiggle.com.au/?q=standings;year=2026',{headers:{'User-Agent':'AFL-Tipster/1.0'}})
+    .then(r=>r.json())
+    .then(data=>{
+      const standings=(data.standings||[]).slice().sort((a,b)=>a.rank-b.rank);
+      if(!standings.length){tbody.innerHTML='<tr><td colspan="8" class="empty-state">No ladder data available yet.</td></tr>';return;}
+      tbody.innerHTML='';
+      standings.forEach((t,i)=>{
+        const code=Object.entries(TEAMS).find(([,tm])=>tm.name===t.name||t.name.includes(tm.name.split(' ')[0]))?.[0]||'';
+        const color=code&&TEAMS[code]?TEAMS[code].color:'var(--muted)';
+        const logo=code?`<img class="team-logo" src="logos/${code}.png" alt="${t.name}" onerror="this.style.display='none'">`:'';
+        const pts=(t.wins*4+(t.draws||0)*2);
+        const tr=document.createElement('tr');
+        if(i===8)tr.classList.add('finals-line');
+        tr.innerHTML=`
+          <td class="pos">${t.rank}</td>
+          <td><div class="team-cell">${logo}<span class="team-label" style="color:${color}">${t.name}</span></div></td>
+          <td>${(t.wins||0)+(t.losses||0)+(t.draws||0)}</td>
+          <td>${t.wins||0}</td>
+          <td>${t.losses||0}</td>
+          <td>${t.draws||0}</td>
+          <td>${(t.percentage||0).toFixed(1)}%</td>
+          <td class="pts">${pts}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      updatedEl.textContent='Live via Squiggle · '+new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    })
+    .catch(()=>{tbody.innerHTML='<tr><td colspan="8" class="empty-state">Could not load ladder — check connection.</td></tr>';});
 }
 
 // ═══════════════════════════════════════════════════════
