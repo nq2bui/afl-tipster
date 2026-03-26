@@ -475,7 +475,7 @@ def fetch_sportsbet_odds():
     state = None
     for sc in scripts:
         if "__PRELOADED_STATE__" in sc:
-            m = _re.match(r'window\.__PRELOADED_STATE__\s*=\s*', sc.strip())
+            m = _re.search(r'window\.__PRELOADED_STATE__\s*=\s*', sc.strip())
             if m:
                 try:
                     state, _ = _json.JSONDecoder().raw_decode(sc.strip()[m.end():])

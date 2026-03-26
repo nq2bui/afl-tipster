@@ -31,7 +31,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests curl_cffi
 
       - name: Run update script
         run: python update_simulator.py

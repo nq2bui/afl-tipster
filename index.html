@@ -264,6 +264,22 @@ footer{position:relative;z-index:5;padding:14px 24px;border-top:1px solid var(--
 .season-stat{background:var(--surface);border-radius:8px;padding:10px 14px;flex:1;min-width:110px}
 .season-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;line-height:1}
 .season-stat-lbl{font-size:10px;color:var(--muted);margin-top:3px}
+/* SPORTSBET MODAL */
+#sb-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center}
+#sb-modal-overlay.open{display:flex}
+#sb-modal{background:#1a1a2e;border:1px solid rgba(240,165,0,0.3);border-radius:14px;width:min(96vw,1100px);height:min(88vh,780px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.7)}
+#sb-modal-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,0.4);border-bottom:1px solid rgba(240,165,0,0.2);gap:10px;flex-shrink:0}
+#sb-modal-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:8px;white-space:nowrap}
+#sb-modal-actions{display:flex;gap:8px;align-items:center}
+.sb-btn{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:6px 14px;border-radius:7px;cursor:pointer;border:none;transition:all .2s}
+.sb-btn-gold{background:var(--gold);color:#000}.sb-btn-gold:hover{background:var(--gold2)}
+.sb-btn-ghost{background:rgba(255,255,255,0.08);color:var(--muted);border:1px solid rgba(255,255,255,0.12)}.sb-btn-ghost:hover{color:var(--white);background:rgba(255,255,255,0.14)}
+#sb-iframe-wrap{flex:1;position:relative;background:#0d1117}
+#sb-iframe{width:100%;height:100%;border:none;display:block}
+#sb-blocked-msg{display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center}
+#sb-blocked-msg.show{display:flex}
+#sb-blocked-msg p{color:var(--muted);font-size:14px;max-width:360px;line-height:1.6}
+.odds-clickable{cursor:pointer;transition:opacity .15s}.odds-clickable:hover{opacity:.82}
 </style>
 </head>
 <body>
@@ -967,7 +983,7 @@ function buildOddsHtml(ht,at,hwp,awp,model){
   const badge=(e)=>{if(e===null)return'';const clr=e>=2?'#52c27a':e<=-2?'#e05252':'var(--muted)';return`<span style="font-size:10px;font-weight:700;color:${clr}">${e>=0?'+':''}${e.toFixed(1)}%</span>`;};
   if(!od)return`<div style="display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:12px;color:var(--muted);flex-wrap:wrap"><span style="font-weight:600">${mi} Implied:</span><span style="color:var(--gold)">${hn} ${hImp}</span><span>|</span><span style="color:var(--info)">${an} ${aImp}</span></div>`;
   const hE=calcEdge(hwp,od.h), aE=calcEdge(awp,od.a);
-  return`<div style="border-top:1px solid var(--border);padding:8px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px"><span style="color:var(--gold);font-weight:600">${hn}</span><span style="color:var(--muted)">${mi} ${hImp}</span><span>${SB_LOGO} $${od.h.toFixed(2)}</span>${badge(hE)}</div><div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><span style="color:var(--info);font-weight:600">${an}</span><span style="color:var(--muted)">${mi} ${aImp}</span><span>${SB_LOGO} $${od.a.toFixed(2)}</span>${badge(aE)}</div></div>`;
+  return`<div class="odds-clickable" onclick="openSportsbetModal()" title="View on Sportsbet" style="border-top:1px solid var(--border);padding:8px 0 2px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:12px"><span style="color:var(--gold);font-weight:600">${hn}</span><span style="color:var(--muted)">${mi} ${hImp}</span><span>${SB_LOGO} $${od.h.toFixed(2)}</span>${badge(hE)}</div><div style="display:flex;justify-content:space-between;align-items:center;font-size:12px"><span style="color:var(--info);font-weight:600">${an}</span><span style="color:var(--muted)">${mi} ${aImp}</span><span>${SB_LOGO} $${od.a.toFixed(2)}</span>${badge(aE)}</div></div>`;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1994,6 +2010,78 @@ renderCards();
     preview.style.top=top+'px';
   });
 })();
+
+// ═══════════════════════════════════════════════════════
+// SPORTSBET MODAL
+// ═══════════════════════════════════════════════════════
+const SB_URL = 'https://www.sportsbet.com.au/betting/australian-rules/afl';
+function openSportsbetModal(){
+  const overlay = document.getElementById('sb-modal-overlay');
+  const iframe  = document.getElementById('sb-iframe');
+  const blocked = document.getElementById('sb-blocked-msg');
+  blocked.classList.remove('show');
+  iframe.style.display = 'block';
+  if(!iframe.src || iframe.src === 'about:blank') iframe.src = SB_URL;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSportsbetModal(){
+  document.getElementById('sb-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close on overlay click (outside modal box)
+document.getElementById('sb-modal-overlay').addEventListener('click', function(e){
+  if(e.target === this) closeSportsbetModal();
+});
+// Close on Escape key
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeSportsbetModal();
+});
+// Detect if iframe was blocked (X-Frame-Options / CSP)
+document.getElementById('sb-iframe').addEventListener('load', function(){
+  try {
+    // If we can access contentDocument the page loaded fine
+    const doc = this.contentDocument || this.contentWindow.document;
+    if(!doc || doc.URL === 'about:blank') return;
+  } catch(err) {
+    // Cross-origin block — show fallback message
+    showSbBlocked();
+  }
+});
+function showSbBlocked(){
+  const iframe  = document.getElementById('sb-iframe');
+  const blocked = document.getElementById('sb-blocked-msg');
+  iframe.style.display = 'none';
+  blocked.classList.add('show');
+}
 </script>
+
+<!-- SPORTSBET MODAL -->
+<div id="sb-modal-overlay">
+  <div id="sb-modal">
+    <div id="sb-modal-bar">
+      <div id="sb-modal-title">
+        <img src="https://www.google.com/s2/favicons?sz=16&domain=sportsbet.com.au" style="width:16px;height:16px;border-radius:3px" alt="">
+        Sportsbet — AFL Match Odds
+      </div>
+      <div id="sb-modal-actions">
+        <a href="https://www.sportsbet.com.au/betting/australian-rules/afl" target="_blank" rel="noopener noreferrer">
+          <button class="sb-btn sb-btn-gold">Open in New Tab ↗</button>
+        </a>
+        <button class="sb-btn sb-btn-ghost" onclick="closeSportsbetModal()">✕ Close</button>
+      </div>
+    </div>
+    <div id="sb-iframe-wrap">
+      <iframe id="sb-iframe" src="about:blank" title="Sportsbet AFL" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+      <div id="sb-blocked-msg">
+        <img src="https://www.google.com/s2/favicons?sz=32&domain=sportsbet.com.au" style="width:40px;height:40px;border-radius:8px;opacity:.7" alt="">
+        <p>Sportsbet can't be embedded here due to their security policy.<br>Click below to view the latest AFL odds directly on Sportsbet.</p>
+        <a href="https://www.sportsbet.com.au/betting/australian-rules/afl" target="_blank" rel="noopener noreferrer">
+          <button class="sb-btn sb-btn-gold" style="font-size:15px;padding:10px 24px">Open Sportsbet ↗</button>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
