@@ -435,106 +435,78 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
 
 
 def fetch_sportsbet_odds():
-    """Scrape H2H match-winner odds for upcoming AFL matches from Sportsbet.
+    """Fetch H2H match-winner odds for upcoming AFL matches via The Odds API.
 
-    Parses window.__PRELOADED_STATE__ JSON embedded in the AFL page HTML.
-    Uses curl_cffi with Chrome impersonation to bypass Cloudflare.
+    Uses the-odds-api.com to get Sportsbet H2H prices — no scraping required.
+    Reads ODDS_API_KEY from the environment (set as a GitHub Actions secret).
     Returns {"HOME-AWAY": {"h": float, "a": float}} keyed by our team codes.
     """
-    import json as _json
-    import re as _re
+    import os
 
-    # Sportsbet team name → our 3-letter codes
-    SB_TEAM_MAP = {
+    api_key = os.environ.get("ODDS_API_KEY", "")
+    if not api_key:
+        print("  ODDS_API_KEY not set — skipping odds fetch")
+        return {}
+
+    # The Odds API team names → our 3-letter codes
+    ODDS_TEAM_MAP = {
         "Adelaide Crows": "ADE", "Brisbane Lions": "BRI", "Carlton": "CAR",
         "Collingwood": "COL", "Essendon": "ESS", "Fremantle": "FRE",
-        "Geelong Cats": "GEE", "Gold Coast Suns": "GCS", "GWS GIANTS": "GWS",
+        "Geelong Cats": "GEE", "Gold Coast Suns": "GCS",
+        "Greater Western Sydney": "GWS", "GWS Giants": "GWS",
         "Hawthorn": "HAW", "Melbourne": "MEL", "North Melbourne": "NTH",
         "Port Adelaide": "POR", "Richmond": "RIC", "St Kilda": "STK",
         "Sydney Swans": "SYD", "Western Bulldogs": "WBD", "West Coast Eagles": "WCE",
     }
 
-    try:
-        from curl_cffi.requests import Session
-    except ImportError:
-        print("  curl_cffi not installed — skipping Sportsbet scrape")
-        return {}
+    url = "https://api.the-odds-api.com/v4/sports/australianfootball_afl/odds/"
+    params = {
+        "apiKey": api_key,
+        "regions": "au",
+        "markets": "h2h",
+        "bookmakers": "sportsbet",
+        "oddsFormat": "decimal",
+    }
 
-    url = "https://www.sportsbet.com.au/betting/australian-rules/afl"
     try:
-        with Session(impersonate="chrome120") as s:
-            r = s.get(url, timeout=30)
-            r.raise_for_status()
-            html = r.text
+        r = requests.get(url, params=params, timeout=15)
+        r.raise_for_status()
+        games = r.json()
     except Exception as e:
-        print(f"  Sportsbet fetch error: {e}")
+        print(f"  Odds API fetch error: {e}")
         return {}
 
-    # Extract __PRELOADED_STATE__ JSON
-    scripts = _re.findall(r'<script[^>]*>(.*?)</script>', html, _re.DOTALL)
-    state = None
-    for sc in scripts:
-        if "__PRELOADED_STATE__" in sc:
-            m = _re.search(r'window\.__PRELOADED_STATE__\s*=\s*', sc.strip())
-            if m:
-                try:
-                    state, _ = _json.JSONDecoder().raw_decode(sc.strip()[m.end():])
-                except Exception:
-                    pass
-            break
-
-    if not state:
-        print("  Could not parse Sportsbet page data")
-        return {}
-
-    sb = state.get("entities", {}).get("sportsbook", {})
-    evts   = sb.get("events", {})
-    mkts   = sb.get("markets", {})
-    outs   = sb.get("outcomes", {})
-
-    def get(store, key):
-        return store.get(str(key)) or store.get(key)
-
-    def decimal_price(wp):
-        return round(wp["num"] / wp["den"] + 1, 2)
+    remaining = r.headers.get("x-requests-remaining", "?")
+    print(f"  Odds API: {len(games)} games returned  (requests remaining: {remaining})")
 
     odds_map = {}
-    for ev in evts.values():
-        p1 = ev.get("participant1", "")
-        p2 = ev.get("participant2", "")
-        if not p1 or not p2:
-            continue
-        home_code = SB_TEAM_MAP.get(p1)
-        away_code = SB_TEAM_MAP.get(p2)
+    for game in games:
+        home_team = game.get("home_team", "")
+        away_team = game.get("away_team", "")
+        home_code = ODDS_TEAM_MAP.get(home_team)
+        away_code = ODDS_TEAM_MAP.get(away_team)
         if not home_code or not away_code:
+            if home_team or away_team:
+                print(f"  Unmapped teams: '{home_team}' vs '{away_team}'")
             continue
 
-        # Find the Head to Head market (marketSort == "HH")
-        for mid in ev.get("marketIds", []):
-            mkt = get(mkts, mid)
-            if not mkt or mkt.get("marketSort") != "HH":
+        # Find Sportsbet H2H market
+        for bm in game.get("bookmakers", []):
+            if bm.get("key") != "sportsbet":
                 continue
-            oc_ids = mkt.get("outcomeIds", [])
-            if len(oc_ids) != 2:
-                continue
-            o1 = get(outs, oc_ids[0])
-            o2 = get(outs, oc_ids[1])
-            if not o1 or not o2:
-                continue
-            # Match outcome names to home/away
-            name_map = {o1["name"]: o1, o2["name"]: o2}
-            home_oc = name_map.get(p1)
-            away_oc = name_map.get(p2)
-            if not home_oc or not away_oc:
-                continue
-            h_price = decimal_price(home_oc["winPrice"])
-            a_price = decimal_price(away_oc["winPrice"])
-            key = f"{home_code}-{away_code}"
-            odds_map[key] = {"h": h_price, "a": a_price}
-            print(f"  {home_code} ${h_price}  vs  {away_code} ${a_price}")
-            break
+            for market in bm.get("markets", []):
+                if market.get("key") != "h2h":
+                    continue
+                outcomes = {o["name"]: o["price"] for o in market.get("outcomes", [])}
+                h_price = outcomes.get(home_team)
+                a_price = outcomes.get(away_team)
+                if h_price and a_price:
+                    key = f"{home_code}-{away_code}"
+                    odds_map[key] = {"h": round(h_price, 2), "a": round(a_price, 2)}
+                    print(f"  {home_code} ${h_price}  vs  {away_code} ${a_price}")
+                break
 
-    print(f"  Scraped Sportsbet H2H odds for {len(odds_map)} matches")
+    print(f"  Fetched Sportsbet H2H odds for {len(odds_map)} matches")
     return odds_map
 
 

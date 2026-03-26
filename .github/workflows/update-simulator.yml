@@ -31,11 +31,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests curl_cffi
+        run: pip install requests
 
       - name: Run update script
         run: python update_simulator.py
         working-directory: ${{ github.workspace }}
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
 
       - name: Commit and push changes
         run: |
