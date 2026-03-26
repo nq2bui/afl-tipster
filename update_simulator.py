@@ -448,18 +448,30 @@ def fetch_sportsbet_odds():
         print("  ODDS_API_KEY not set — skipping odds fetch")
         return {}
 
-    # The Odds API team names → our 3-letter codes
+    # The Odds API team names → our 3-letter codes (short and full nickname variants)
     ODDS_TEAM_MAP = {
-        "Adelaide Crows": "ADE", "Brisbane Lions": "BRI", "Carlton": "CAR",
-        "Collingwood": "COL", "Essendon": "ESS", "Fremantle": "FRE",
-        "Geelong Cats": "GEE", "Gold Coast Suns": "GCS",
+        "Adelaide Crows": "ADE",
+        "Brisbane Lions": "BRI",
+        "Carlton": "CAR", "Carlton Blues": "CAR",
+        "Collingwood": "COL", "Collingwood Magpies": "COL",
+        "Essendon": "ESS", "Essendon Bombers": "ESS",
+        "Fremantle": "FRE", "Fremantle Dockers": "FRE",
+        "Geelong Cats": "GEE",
+        "Gold Coast Suns": "GCS",
         "Greater Western Sydney": "GWS", "GWS Giants": "GWS",
-        "Hawthorn": "HAW", "Melbourne": "MEL", "North Melbourne": "NTH",
-        "Port Adelaide": "POR", "Richmond": "RIC", "St Kilda": "STK",
-        "Sydney Swans": "SYD", "Western Bulldogs": "WBD", "West Coast Eagles": "WCE",
+        "Greater Western Sydney Giants": "GWS",
+        "Hawthorn": "HAW", "Hawthorn Hawks": "HAW",
+        "Melbourne": "MEL", "Melbourne Demons": "MEL",
+        "North Melbourne": "NTH", "North Melbourne Kangaroos": "NTH",
+        "Port Adelaide": "POR", "Port Adelaide Power": "POR",
+        "Richmond": "RIC", "Richmond Tigers": "RIC",
+        "St Kilda": "STK", "St Kilda Saints": "STK",
+        "Sydney Swans": "SYD",
+        "Western Bulldogs": "WBD",
+        "West Coast Eagles": "WCE",
     }
 
-    url = "https://api.the-odds-api.com/v4/sports/australianfootball_afl/odds/"
+    url = "https://api.the-odds-api.com/v4/sports/aussierules_afl/odds/"
     params = {
         "apiKey": api_key,
         "regions": "au",
