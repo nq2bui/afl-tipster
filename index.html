@@ -639,10 +639,10 @@ const PLAYER_IMGS = {
 const TEAMS = {
   ADE:{name:"Adelaide",color:"#002B5C",baseRating:81,formMult:1.06,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"R. Thilthorpe",r:99,pos:"FWD",out:false},{n:"I. Rankine",r:84,pos:"FWD",out:false},
-    {n:"T. Walker",r:82,pos:"FWD",out:true},{n:"C. Ah Chee",r:78,pos:"FWD",out:true},
-    {n:"D. Fogarty",r:77,pos:"FWD",out:false},{n:"J. Dawson",r:90,pos:"MID",out:true},
+    {n:"T. Walker",r:82,pos:"FWD",out:false},{n:"C. Ah Chee",r:78,pos:"FWD",out:false},
+    {n:"D. Fogarty",r:77,pos:"FWD",out:false},{n:"J. Dawson",r:90,pos:"MID",out:false},
     {n:"B. Keays",r:90,pos:"MID",out:false},
-    {n:"R. Laird",r:93,pos:"DEF",out:true},{n:"W. Milera",r:79,pos:"DEF",out:false},
+    {n:"R. Laird",r:93,pos:"DEF",out:false},{n:"W. Milera",r:79,pos:"DEF",out:false},
     {n:"J. Worrell",r:85,pos:"DEF",out:false},{n:"M. Michalanney",r:69,pos:"DEF",out:false},
     {n:"J. Butts",r:59,pos:"RCK",out:false}]},
   BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.02,wins:0,losses:0,pct:100.0,rank:9,players:[
@@ -654,7 +654,7 @@ const TEAMS = {
     {n:"D. Fort",r:70,pos:"RCK",out:false},{n:"S. Draper",r:75,pos:"RCK",out:false},{n:"J. Fletcher",r:84,pos:"DEF",out:false}]},
   CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"P. Cripps",r:83,pos:"MID",out:false},{n:"S. Walsh",r:84,pos:"MID",out:false},
-    {n:"G. Hewett",r:89,pos:"MID",out:false},{n:"L. Fogarty",r:78,pos:"MID",out:true},{n:"H. McKay",r:92,pos:"FWD",out:false},
+    {n:"G. Hewett",r:89,pos:"MID",out:false},{n:"L. Fogarty",r:78,pos:"MID",out:false},{n:"H. McKay",r:92,pos:"FWD",out:false},
     {n:"M. Cottrell",r:72,pos:"FWD",out:false},
     {n:"A. Saad",r:80,pos:"DEF",out:false},{n:"M. Pittonet",r:72,pos:"RCK",out:false},
     {n:"L. Cowan",r:72,pos:"DEF",out:false},{n:"B. Kemp",r:67,pos:"DEF",out:false},
@@ -670,7 +670,7 @@ const TEAMS = {
     {n:"N. Martin",r:83,pos:"MID",out:false},{n:"X. Duursma",r:75,pos:"MID",out:false},
     {n:"J. Caldwell",r:84,pos:"MID",out:false},{n:"P. Wright",r:88,pos:"FWD",out:false},
     {n:"K. Langford",r:71,pos:"FWD",out:false},{n:"H. Jones",r:61,pos:"FWD",out:false},{n:"A. McGrath",r:82,pos:"DEF",out:false},
-    {n:"M. Redman",r:88,pos:"DEF",out:true}]},
+    {n:"M. Redman",r:88,pos:"DEF",out:false}]},
   FRE:{name:"Fremantle",color:"#2A1A5E",baseRating:81,formMult:1.08,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"A. Brayshaw",r:90,pos:"MID",out:false},{n:"C. Serong",r:86,pos:"MID",out:false},
     {n:"H. Young",r:71,pos:"MID",out:false},{n:"L. Jackson",r:84,pos:"RCK",out:false},
@@ -680,8 +680,8 @@ const TEAMS = {
     {n:"A. Pearce",r:73,pos:"DEF",out:false},{n:"H. Chapman",r:70,pos:"DEF",out:false}]},
   GEE:{name:"Geelong",color:"#1C3C63",baseRating:84,formMult:1.05,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"J. Cameron",r:94,pos:"FWD",out:false},{n:"O. Henry",r:64,pos:"FWD",out:false},
-    {n:"B. Close",r:76,pos:"FWD",out:true},{n:"O. Dempsey",r:74,pos:"FWD",out:false},
-    {n:"P. Dangerfield",r:89,pos:"MID",out:true},
+    {n:"B. Close",r:76,pos:"FWD",out:false},{n:"O. Dempsey",r:74,pos:"FWD",out:false},
+    {n:"P. Dangerfield",r:89,pos:"MID",out:false},
     {n:"B. Smith",r:92,pos:"MID",out:false},{n:"T. Atkins",r:83,pos:"MID",out:false},
     {n:"M. Holmes",r:89,pos:"MID",out:false},{n:"Z. Guthrie",r:81,pos:"MID",out:false},
     {n:"T. Stewart",r:87,pos:"DEF",out:false},{n:"J. Kolodjashnij",r:69,pos:"DEF",out:false},
@@ -721,17 +721,17 @@ const TEAMS = {
     {n:"B. Scott",r:60,pos:"MID",out:false},{n:"N. Larkey",r:83,pos:"FWD",out:false},
     {n:"G. Wardlaw",r:72,pos:"FWD",out:false},{n:"T. Xerri",r:90,pos:"RCK",out:false}]},
   POR:{name:"Port Adelaide",color:"#008AAB",baseRating:78,formMult:0.94,wins:0,losses:0,pct:100.0,rank:9,players:[
-    {n:"Z. Butters",r:93,pos:"MID",out:false},{n:"C. Rozee",r:94,pos:"MID",out:true},
+    {n:"Z. Butters",r:93,pos:"MID",out:false},{n:"C. Rozee",r:94,pos:"MID",out:false},
     {n:"J. Horne-Francis",r:81,pos:"MID",out:false},{n:"O. Wines",r:81,pos:"MID",out:false},
     {n:"W. Drew",r:76,pos:"MID",out:false},{n:"S. Powell-Pepper",r:81,pos:"MID",out:false},
-    {n:"T. Marshall",r:79,pos:"FWD",out:true},{n:"M. Georgiades",r:84,pos:"FWD",out:false},
+    {n:"T. Marshall",r:79,pos:"FWD",out:false},{n:"M. Georgiades",r:84,pos:"FWD",out:false},
     {n:"K. Farrell",r:84,pos:"FWD",out:false}]},
   RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.96,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"T. Taranto",r:83,pos:"MID",out:false},{n:"D. Prestia",r:76,pos:"MID",out:false},
     {n:"J. Hopper",r:79,pos:"MID",out:false},{n:"J. Ross",r:74,pos:"MID",out:false},
-    {n:"T. Lynch",r:73,pos:"FWD",out:true},
+    {n:"T. Lynch",r:73,pos:"FWD",out:false},
     {n:"M. Rioli",r:68,pos:"FWD",out:false},
-    {n:"T. Brown",r:71,pos:"FWD",out:false},{n:"T. Nankervis",r:78,pos:"RCK",out:true},
+    {n:"T. Brown",r:71,pos:"FWD",out:false},{n:"T. Nankervis",r:78,pos:"RCK",out:false},
     {n:"N. Vlastuin",r:85,pos:"DEF",out:false},{n:"J. Short",r:82,pos:"DEF",out:false}]},
   STK:{name:"St Kilda",color:"#ED0F05",baseRating:76,formMult:0.95,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"T. De Koning",r:77,pos:"RCK",out:false},{n:"R. Marshall",r:81,pos:"RCK",out:false},
@@ -760,7 +760,7 @@ const TEAMS = {
     {n:"H. Reid",r:71,pos:"MID",out:false},
     {n:"J. Waterman",r:78,pos:"FWD",out:false},{n:"D. Robertson",r:50,pos:"FWD",out:false},
     {n:"B. Williams",r:70,pos:"FWD",out:false},{n:"L. Duggan",r:80,pos:"DEF",out:false},
-    {n:"H. Edwards",r:69,pos:"DEF",out:true}]},
+    {n:"H. Edwards",r:69,pos:"DEF",out:false}]},
 };
 
 // ═══════════════════════════════════════════════════════
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"POR-WCE":{"h":1.26,"a":3.9},"CAR-MEL":{"h":1.98,"a":1.86}};
+const SPORTSBET_ODDS = {"BRI-COL":{"h":1.42,"a":2.9},"NTH-CAR":{"h":2.31,"a":1.62},"ADE-FRE":{"h":1.74,"a":2.1},"RIC-POR":{"h":2.46,"a":1.55},"WCE-SYD":{"h":3.78,"a":1.27},"MEL-GCS":{"h":3.2,"a":1.35},"WBD-ESS":{"h":1.01,"a":19.0},"HAW-GEE":{"h":1.53,"a":2.51}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
