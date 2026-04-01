@@ -661,9 +661,9 @@ const TEAMS = {
     {n:"O. Florent",r:66,pos:"MID",out:false},{n:"B. Ainsworth",r:76,pos:"FWD",out:false}]},
   COL:{name:"Collingwood",color:"#000000",baseRating:82,formMult:0.97,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"N. Daicos",r:91,pos:"MID",out:false},{n:"J. Daicos",r:86,pos:"MID",out:false},
-    {n:"S. Pendlebury",r:81,pos:"MID",out:false},{n:"J. Crisp",r:80,pos:"MID",out:false},
+    {n:"S. Pendlebury",r:81,pos:"MID",out:true},{n:"J. Crisp",r:80,pos:"MID",out:false},
     {n:"P. Lipinski",r:72,pos:"MID",out:false},{n:"J. Elliott",r:85,pos:"FWD",out:false},
-    {n:"D. Moore",r:72,pos:"FWD",out:false},{n:"D. Houston",r:80,pos:"DEF",out:false},{n:"B. Maynard",r:78,pos:"DEF",out:false},
+    {n:"D. Moore",r:72,pos:"FWD",out:true},{n:"D. Houston",r:80,pos:"DEF",out:false},{n:"B. Maynard",r:78,pos:"DEF",out:false},
     {n:"B. Frampton",r:69,pos:"DEF",out:false},{n:"D. Cameron",r:83,pos:"RCK",out:false}]},
   ESS:{name:"Essendon",color:"#CC2031",baseRating:74,formMult:0.91,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"Z. Merrett",r:87,pos:"MID",out:false},{n:"D. Parish",r:79,pos:"MID",out:false},
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"BRI-COL":{"h":1.38,"a":3.07},"NTH-CAR":{"h":2.28,"a":1.63},"ADE-FRE":{"h":1.81,"a":2.04},"RIC-POR":{"h":2.54,"a":1.52},"WCE-SYD":{"h":4.45,"a":1.21},"MEL-GCS":{"h":3.27,"a":1.34},"WBD-ESS":{"h":1.0,"a":21.0},"HAW-GEE":{"h":1.57,"a":2.4}};
+const SPORTSBET_ODDS = {"BRI-COL":{"h":1.39,"a":3.02},"NTH-CAR":{"h":2.21,"a":1.67},"ADE-FRE":{"h":1.83,"a":2.01},"RIC-POR":{"h":2.52,"a":1.53},"WCE-SYD":{"h":4.75,"a":1.19},"MEL-GCS":{"h":3.27,"a":1.34},"WBD-ESS":{"h":1.0,"a":21.0},"HAW-GEE":{"h":1.6,"a":2.35}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
