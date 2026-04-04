@@ -710,7 +710,7 @@ const TEAMS = {
     {n:"M. Gawn",r:90,pos:"RCK",out:false},{n:"J. Viney",r:78,pos:"MID",out:false},
     {n:"J. Steele",r:81,pos:"MID",out:false},{n:"C. Salem",r:86,pos:"MID",out:false},
     {n:"T. Sparrow",r:76,pos:"MID",out:false},{n:"K. Pickett",r:80,pos:"FWD",out:false},
-    {n:"T. McDonald",r:77,pos:"FWD",out:false},{n:"B. Fritsch",r:80,pos:"FWD",out:false},
+    {n:"T. McDonald",r:77,pos:"FWD",out:false},{n:"B. Fritsch",r:80,pos:"FWD",out:true},
     {n:"J. Van Rooyen",r:70,pos:"FWD",out:false},{n:"B. Mihocek",r:80,pos:"FWD",out:false},
     {n:"J. Lever",r:72,pos:"DEF",out:false},
     {n:"S. May",r:75,pos:"DEF",out:false},{n:"J. Bowey",r:87,pos:"DEF",out:false}]},
@@ -747,7 +747,7 @@ const TEAMS = {
     {n:"L. McDonald",r:73,pos:"FWD",out:false},{n:"J. Amartey",r:73,pos:"FWD",out:false},
     {n:"T. Blakey",r:92,pos:"FWD",out:false},{n:"H. McLean",r:76,pos:"FWD",out:false},
     {n:"N. Blakey",r:92,pos:"DEF",out:false},{n:"B. Grundy",r:89,pos:"RCK",out:false},
-    {n:"C. Curnow",r:82,pos:"FWD",out:false},{n:"M. Rosas",r:58,pos:"FWD",out:false}]},
+    {n:"C. Curnow",r:82,pos:"FWD",out:false},{n:"M. Rosas",r:58,pos:"FWD",out:true}]},
   WBD:{name:"W. Bulldogs",color:"#014896",baseRating:83,formMult:1.08,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"M. Bontempelli",r:97,pos:"MID",out:false},{n:"T. Liberatore",r:89,pos:"MID",out:true},
     {n:"A. Treloar",r:71,pos:"MID",out:false},{n:"J. Freijah",r:75,pos:"MID",out:false},
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"RIC-POR":{"h":2.85,"a":1.41},"WCE-SYD":{"h":5.1,"a":1.17},"MEL-GCS":{"h":3.44,"a":1.32},"WBD-ESS":{"h":1.0,"a":21.0},"HAW-GEE":{"h":1.57,"a":2.41}};
+const SPORTSBET_ODDS = {"MEL-GCS":{"h":3.44,"a":1.32},"WBD-ESS":{"h":1.0,"a":21.0},"HAW-GEE":{"h":1.57,"a":2.41}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
