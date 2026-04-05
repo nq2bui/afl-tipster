@@ -704,7 +704,7 @@ const TEAMS = {
     {n:"C. Nash",r:73,pos:"MID",out:false},
     {n:"J. Gunston",r:92,pos:"FWD",out:false},{n:"J. Battle",r:80,pos:"MID",out:false},
     {n:"C. Macdonald",r:82,pos:"FWD",out:false},{n:"T. Barrass",r:70,pos:"DEF",out:false},
-    {n:"J. Sicily",r:85,pos:"DEF",out:false},{n:"K. Amon",r:89,pos:"DEF",out:false},
+    {n:"J. Sicily",r:85,pos:"DEF",out:false},{n:"K. Amon",r:89,pos:"DEF",out:true},
     {n:"J. Impey",r:83,pos:"DEF",out:false},{n:"L. Meek",r:79,pos:"RCK",out:false}]},
   MEL:{name:"Melbourne",color:"#CC2031",baseRating:78,formMult:1.04,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"M. Gawn",r:90,pos:"RCK",out:false},{n:"J. Viney",r:78,pos:"MID",out:false},
@@ -754,7 +754,7 @@ const TEAMS = {
     {n:"B. Dale",r:92,pos:"MID",out:false},{n:"A. Naughton",r:88,pos:"FWD",out:false},
     {n:"R. Garcia",r:67,pos:"FWD",out:false},{n:"L. Bramble",r:72,pos:"FWD",out:false},
     {n:"L. McNeil",r:68,pos:"FWD",out:false},{n:"S. Darcy",r:98,pos:"FWD",out:false},
-    {n:"T. English",r:83,pos:"RCK",out:false},{n:"E. Richards",r:89,pos:"DEF",out:false}]},
+    {n:"T. English",r:83,pos:"RCK",out:false},{n:"E. Richards",r:89,pos:"DEF",out:true}]},
   WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.90,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"E. Yeo",r:83,pos:"MID",out:true},{n:"T. Kelly",r:72,pos:"MID",out:false},
     {n:"H. Reid",r:71,pos:"MID",out:false},
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"MEL-GCS":{"h":3.35,"a":1.31},"WBD-ESS":{"h":1.0,"a":21.0},"HAW-GEE":{"h":1.61,"a":2.34}};
+const SPORTSBET_ODDS = {"WBD-ESS":{"h":1.0,"a":19.0},"HAW-GEE":{"h":1.62,"a":2.31}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
