@@ -654,7 +654,7 @@ const TEAMS = {
     {n:"D. Fort",r:70,pos:"RCK",out:false},{n:"S. Draper",r:75,pos:"RCK",out:false},{n:"J. Fletcher",r:84,pos:"DEF",out:false}]},
   CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"P. Cripps",r:83,pos:"MID",out:false},{n:"S. Walsh",r:84,pos:"MID",out:false},
-    {n:"G. Hewett",r:89,pos:"MID",out:false},{n:"L. Fogarty",r:78,pos:"MID",out:false},{n:"H. McKay",r:92,pos:"FWD",out:false},
+    {n:"G. Hewett",r:89,pos:"MID",out:true},{n:"L. Fogarty",r:78,pos:"MID",out:false},{n:"H. McKay",r:92,pos:"FWD",out:false},
     {n:"M. Cottrell",r:72,pos:"FWD",out:false},
     {n:"A. Saad",r:80,pos:"DEF",out:false},{n:"M. Pittonet",r:72,pos:"RCK",out:false},
     {n:"L. Cowan",r:72,pos:"DEF",out:false},{n:"B. Kemp",r:67,pos:"DEF",out:false},
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"ADE-CAR":{"h":1.14,"a":5.75},"COL-FRE":{"h":2.66,"a":1.48},"NTH-BRI":{"h":5.1,"a":1.17},"ESS-MEL":{"h":4.1,"a":1.24},"SYD-GCS":{"h":1.83,"a":1.99},"HAW-WBD":{"h":1.63,"a":2.3},"GEE-WCE":{"h":1.1,"a":7.0},"GWS-RIC":{"h":1.14,"a":5.75},"POR-STK":{"h":2.3,"a":1.62}};
+const SPORTSBET_ODDS = {"ADE-CAR":{"h":1.14,"a":5.8},"COL-FRE":{"h":2.66,"a":1.48},"NTH-BRI":{"h":5.1,"a":1.17},"ESS-MEL":{"h":4.1,"a":1.24},"SYD-GCS":{"h":1.86,"a":1.98},"HAW-WBD":{"h":1.64,"a":2.27},"GEE-WCE":{"h":1.1,"a":7.0},"GWS-RIC":{"h":1.14,"a":5.75},"POR-STK":{"h":2.3,"a":1.62}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
