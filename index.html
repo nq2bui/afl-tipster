@@ -679,7 +679,7 @@ const TEAMS = {
     {n:"S. Bolton",r:76,pos:"FWD",out:false},{n:"L. Ryan",r:88,pos:"DEF",out:false},
     {n:"A. Pearce",r:73,pos:"DEF",out:false},{n:"H. Chapman",r:70,pos:"DEF",out:false}]},
   GEE:{name:"Geelong",color:"#1C3C63",baseRating:84,formMult:1.05,wins:0,losses:0,pct:100.0,rank:9,players:[
-    {n:"J. Cameron",r:94,pos:"FWD",out:false},{n:"O. Henry",r:64,pos:"FWD",out:false},
+    {n:"J. Cameron",r:94,pos:"FWD",out:false},{n:"O. Henry",r:64,pos:"FWD",out:true},
     {n:"B. Close",r:76,pos:"FWD",out:false},{n:"O. Dempsey",r:74,pos:"FWD",out:false},
     {n:"P. Dangerfield",r:89,pos:"MID",out:false},
     {n:"B. Smith",r:92,pos:"MID",out:false},{n:"T. Atkins",r:83,pos:"MID",out:false},
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"COL-FRE":{"h":2.74,"a":1.46},"NTH-BRI":{"h":5.8,"a":1.14},"ESS-MEL":{"h":4.2,"a":1.23},"SYD-GCS":{"h":1.74,"a":2.1},"HAW-WBD":{"h":1.69,"a":2.18},"GEE-WCE":{"h":1.08,"a":8.0},"GWS-RIC":{"h":1.13,"a":6.05},"POR-STK":{"h":2.35,"a":1.6}};
+const SPORTSBET_ODDS = {"NTH-BRI":{"h":6.05,"a":1.13},"ESS-MEL":{"h":4.1,"a":1.24},"SYD-GCS":{"h":1.74,"a":2.1},"HAW-WBD":{"h":1.7,"a":2.15},"GEE-WCE":{"h":1.09,"a":7.5},"GWS-RIC":{"h":1.13,"a":6.0},"POR-STK":{"h":2.32,"a":1.61}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
