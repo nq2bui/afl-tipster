@@ -654,7 +654,7 @@ const TEAMS = {
     {n:"D. Fort",r:70,pos:"RCK",out:false},{n:"S. Draper",r:75,pos:"RCK",out:false},{n:"J. Fletcher",r:84,pos:"DEF",out:false}]},
   CAR:{name:"Carlton",color:"#0E1E2D",baseRating:79,formMult:0.98,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"P. Cripps",r:83,pos:"MID",out:false},{n:"S. Walsh",r:84,pos:"MID",out:false},
-    {n:"G. Hewett",r:89,pos:"MID",out:true},{n:"L. Fogarty",r:78,pos:"MID",out:false},{n:"H. McKay",r:92,pos:"FWD",out:false},
+    {n:"G. Hewett",r:89,pos:"MID",out:false},{n:"L. Fogarty",r:78,pos:"MID",out:false},{n:"H. McKay",r:92,pos:"FWD",out:false},
     {n:"M. Cottrell",r:72,pos:"FWD",out:false},
     {n:"A. Saad",r:80,pos:"DEF",out:false},{n:"M. Pittonet",r:72,pos:"RCK",out:false},
     {n:"L. Cowan",r:72,pos:"DEF",out:false},{n:"B. Kemp",r:67,pos:"DEF",out:false},
@@ -679,7 +679,7 @@ const TEAMS = {
     {n:"S. Bolton",r:76,pos:"FWD",out:false},{n:"L. Ryan",r:88,pos:"DEF",out:false},
     {n:"A. Pearce",r:73,pos:"DEF",out:false},{n:"H. Chapman",r:70,pos:"DEF",out:false}]},
   GEE:{name:"Geelong",color:"#1C3C63",baseRating:84,formMult:1.05,wins:0,losses:0,pct:100.0,rank:9,players:[
-    {n:"J. Cameron",r:94,pos:"FWD",out:false},{n:"O. Henry",r:64,pos:"FWD",out:true},
+    {n:"J. Cameron",r:94,pos:"FWD",out:false},{n:"O. Henry",r:64,pos:"FWD",out:false},
     {n:"B. Close",r:76,pos:"FWD",out:false},{n:"O. Dempsey",r:74,pos:"FWD",out:false},
     {n:"P. Dangerfield",r:89,pos:"MID",out:false},
     {n:"B. Smith",r:92,pos:"MID",out:false},{n:"T. Atkins",r:83,pos:"MID",out:false},
@@ -698,7 +698,7 @@ const TEAMS = {
     {n:"C. Oliver",r:81,pos:"MID",out:false},{n:"J. Kelly",r:79,pos:"MID",out:false},
     {n:"J. Hogan",r:87,pos:"FWD",out:false},{n:"T. Greene",r:89,pos:"FWD",out:false},
     {n:"B. Daniels",r:77,pos:"FWD",out:false},{n:"S. Taylor",r:81,pos:"DEF",out:false},
-    {n:"K. Briggs",r:70,pos:"RCK",out:true}]},
+    {n:"K. Briggs",r:70,pos:"RCK",out:false}]},
   HAW:{name:"Hawthorn",color:"#4D2004",baseRating:82,formMult:1.10,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"J. Ward",r:76,pos:"MID",out:false},{n:"J. Newcombe",r:82,pos:"MID",out:false},
     {n:"C. Nash",r:73,pos:"MID",out:false},
@@ -753,8 +753,8 @@ const TEAMS = {
     {n:"A. Treloar",r:71,pos:"MID",out:false},{n:"J. Freijah",r:75,pos:"MID",out:false},
     {n:"B. Dale",r:92,pos:"MID",out:false},{n:"A. Naughton",r:88,pos:"FWD",out:false},
     {n:"R. Garcia",r:67,pos:"FWD",out:false},{n:"L. Bramble",r:72,pos:"FWD",out:false},
-    {n:"L. McNeil",r:68,pos:"FWD",out:true},{n:"S. Darcy",r:98,pos:"FWD",out:false},
-    {n:"T. English",r:83,pos:"RCK",out:true},{n:"E. Richards",r:89,pos:"DEF",out:false}]},
+    {n:"L. McNeil",r:68,pos:"FWD",out:false},{n:"S. Darcy",r:98,pos:"FWD",out:false},
+    {n:"T. English",r:83,pos:"RCK",out:false},{n:"E. Richards",r:89,pos:"DEF",out:false}]},
   WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.90,wins:0,losses:0,pct:100.0,rank:9,players:[
     {n:"E. Yeo",r:83,pos:"MID",out:false},{n:"T. Kelly",r:72,pos:"MID",out:false},
     {n:"H. Reid",r:71,pos:"MID",out:false},
@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"GWS-RIC":{"h":1.11,"a":6.25},"POR-STK":{"h":2.31,"a":1.62}};
+const SPORTSBET_ODDS = {"CAR-COL":{"h":2.71,"a":1.47},"GEE-WBD":{"h":1.52,"a":2.53},"SYD-GWS":{"h":1.27,"a":3.78},"GCS-ESS":{"h":1.08,"a":8.0},"HAW-POR":{"h":1.12,"a":6.4},"ADE-STK":{"h":1.45,"a":2.76},"NTH-RIC":{"h":1.3,"a":3.56},"MEL-BRI":{"h":3.25,"a":1.35},"WCE-FRE":{"h":7.0,"a":1.1}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
