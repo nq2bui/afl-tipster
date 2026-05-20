@@ -1052,7 +1052,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"HAW-ADE":{"h":1.41,"a":2.93},"RIC-ESS":{"h":2.61,"a":1.5},"FRE-STK":{"h":1.25,"a":4.0},"NTH-GCS":{"h":2.43,"a":1.56},"GEE-SYD":{"h":1.57,"a":2.41},"COL-WCE":{"h":1.08,"a":8.0},"POR-CAR":{"h":1.56,"a":2.43},"GWS-BRI":{"h":2.71,"a":1.47},"WBD-MEL":{"h":2.11,"a":1.73}};
+const SPORTSBET_ODDS = {"HAW-ADE":{"h":1.41,"a":2.93},"RIC-ESS":{"h":2.61,"a":1.5},"FRE-STK":{"h":1.22,"a":4.3},"NTH-GCS":{"h":2.43,"a":1.56},"GEE-SYD":{"h":1.57,"a":2.41},"COL-WCE":{"h":1.08,"a":8.0},"POR-CAR":{"h":1.56,"a":2.43},"GWS-BRI":{"h":2.71,"a":1.47},"WBD-MEL":{"h":2.11,"a":1.73}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
