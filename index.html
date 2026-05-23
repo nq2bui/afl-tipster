@@ -1983,12 +1983,12 @@ function renderSeasonChart(data,container){
     </div>
     <div class="season-summary">
       <div class="season-stat">
-        <div class="season-stat-val" style="color:var(--gold)">${Math.round(totalMC/totalGames*100)}%</div>
-        <div class="season-stat-lbl">MC Season Accuracy${winnerMC?' 🏆':''}</div>
+        <div class="season-stat-val" style="color:var(--gold)">${totalMC}/${totalGames}</div>
+        <div class="season-stat-lbl">MC Correct (${Math.round(totalMC/totalGames*100)}%)${winnerMC?' 🏆':''}</div>
       </div>
       <div class="season-stat">
-        <div class="season-stat-val" style="color:var(--info)">${Math.round(totalELO/totalGames*100)}%</div>
-        <div class="season-stat-lbl">ELO Season Accuracy${winnerELO?' 🏆':''}</div>
+        <div class="season-stat-val" style="color:var(--info)">${totalELO}/${totalGames}</div>
+        <div class="season-stat-lbl">ELO Correct (${Math.round(totalELO/totalGames*100)}%)${winnerELO?' 🏆':''}</div>
       </div>
       <div class="season-stat">
         <div class="season-stat-val" style="color:var(--gold)">${avgMcMAE} pts</div>
