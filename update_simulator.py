@@ -63,6 +63,13 @@ CFS_TEAM_MAP = {
     "Sydney Swans": "SYD", "Sydney": "SYD",
     "Western Bulldogs": "WBD",
     "West Coast Eagles": "WCE", "West Coast": "WCE",
+    # Indigenous team names
+    "Kuwarna": "ADE",
+    "Walyalup": "FRE",
+    "Euro-Yroke": "STK",
+    "Waalitj Marawar": "WCE",
+    "Yartapuulti": "POR",
+    "Narrm": "MEL",
 }
 
 # SuperCoach abbreviations → our short codes (ratings only)
@@ -259,7 +266,9 @@ def fetch_afl_lineups(round_num):
 def squiggle_get(query_params):
     """Fetch data from the Squiggle API."""
     try:
-        r = requests.get(SQUIGGLE_BASE, params={"q": query_params}, headers=SQUIGGLE_HEADERS, timeout=10)
+        # Build URL directly — requests.params encodes semicolons/equals which Squiggle rejects
+        url = f"{SQUIGGLE_BASE}?q={query_params}"
+        r = requests.get(url, headers=SQUIGGLE_HEADERS, timeout=10)
         r.raise_for_status()
         return r.json()
     except Exception as e:
