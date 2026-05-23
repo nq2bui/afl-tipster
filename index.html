@@ -1458,7 +1458,7 @@ async function loadFormData(){
     // Fetch 2022–2026 in parallel — need 5 years as some pairs only meet once per season
     const jsons=await Promise.all(
       [2022,2023,2024,2025,2026].map(y=>
-        fetch(`https://api.squiggle.com.au/?q=games;year=${y}`,{headers:{'User-Agent':'AFL-Tipster/1.0'}}).then(r=>r.json())
+        fetch(`https://api.squiggle.com.au/?q=games;year=${y}`).then(r=>r.json())
       )
     );
     const allGames=jsons.flatMap(d=>(d.games||[]).filter(g=>g.complete===100));
@@ -1617,7 +1617,7 @@ function renderAFLLadder(){
   const tbody=document.getElementById('aflLadderBody');
   const updatedEl=document.getElementById('ladderUpdated');
   tbody.innerHTML='<tr><td colspan="8" class="empty-state">Loading…</td></tr>';
-  fetch('https://api.squiggle.com.au/?q=standings;year=2026',{headers:{'User-Agent':'AFL-Tipster/1.0'}})
+  fetch('https://api.squiggle.com.au/?q=standings;year=2026')
     .then(r=>r.json())
     .then(data=>{
       const standings=(data.standings||[]).slice().sort((a,b)=>a.rank-b.rank);
@@ -1696,7 +1696,7 @@ let weatherMap={};
 async function loadGameTimes(roundKey){
   const sq=roundKey==="OR"?0:parseInt(roundKey);
   try{
-    const r=await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`,{headers:{"User-Agent":"AFL-Tipster/1.0"}});
+    const r=await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`);
     const data=await r.json();
     gameTimesMap={};
     gameDatesMap={};
@@ -1799,8 +1799,7 @@ let accuracyCache = {};
 async function fetchSquiggleRound(roundKey){
   const sq = roundKey === "OR" ? 0 : parseInt(roundKey);
   try {
-    const r = await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`,
-      {headers:{"User-Agent":"AFL-Tipster/1.0"}});
+    const r = await fetch(`https://api.squiggle.com.au/?q=games;year=2026;round=${sq}`);
     const data = await r.json();
     return (data.games||[]).filter(g => g.complete === 100);
   } catch(e){
