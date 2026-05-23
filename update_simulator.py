@@ -7,6 +7,7 @@ Fetches live AFL data from:
 Patches index.html automatically.
 """
 
+import json as _json
 import requests
 import re
 import statistics
@@ -409,6 +410,91 @@ def fetch_sportsbet_odds():
     return odds_map
 
 
+# ── SQUIGGLE RESULTS (for browser-side accuracy tab) ─────────────────────────
+
+def fetch_all_results():
+    """Fetch game results for every round from Squiggle (completed + upcoming).
+
+    Returns dict keyed by round string ("0" for Opening Round, "1", "2", etc.)
+    with minimal game data needed by the accuracy tab and game times.
+    Includes upcoming games (with date but no scores) so game times work.
+    """
+    data = squiggle_get(f"games;year={YEAR}")
+    if not data or "games" not in data:
+        print("  Could not fetch game results from Squiggle")
+        return {}
+
+    results = {}
+    completed = 0
+    for g in data["games"]:
+        rd = str(g.get("round", ""))
+        if not rd:
+            continue
+        if rd not in results:
+            results[rd] = []
+        entry = {
+            "hteam": g.get("hteam", ""),
+            "ateam": g.get("ateam", ""),
+            "hscore": g.get("hscore", 0),
+            "ascore": g.get("ascore", 0),
+            "date": g.get("date", ""),
+            "complete": g.get("complete", 0),
+        }
+        results[rd].append(entry)
+        if g.get("complete", 0) == 100:
+            completed += 1
+
+    print(f"  Fetched {len(results)} rounds ({completed} completed games, {sum(len(v) for v in results.values()) - completed} upcoming)")
+    return results
+
+
+def fetch_h2h_results():
+    """Fetch 5 years of completed game results for head-to-head records.
+
+    Returns list of minimal game objects.
+    """
+    all_games = []
+    for year in range(YEAR - 4, YEAR + 1):
+        data = squiggle_get(f"games;year={year}")
+        if not data or "games" not in data:
+            continue
+        for g in data["games"]:
+            if g.get("complete", 0) != 100:
+                continue
+            all_games.append({
+                "hteam": g.get("hteam", ""),
+                "ateam": g.get("ateam", ""),
+                "hscore": g.get("hscore", 0),
+                "ascore": g.get("ascore", 0),
+                "complete": 100,
+            })
+    print(f"  Fetched {len(all_games)} completed games across {YEAR-4}–{YEAR}")
+    return all_games
+
+
+def fetch_standings_data():
+    """Fetch current ladder standings from Squiggle for browser-side display."""
+    data = squiggle_get(f"standings;year={YEAR}")
+    if not data or "standings" not in data:
+        return []
+    standings = []
+    for t in data["standings"]:
+        standings.append({
+            "name": t.get("name", ""),
+            "played": t.get("played", 0),
+            "wins": t.get("wins", 0),
+            "losses": t.get("losses", 0),
+            "draws": t.get("draws", 0),
+            "pts": t.get("pts", 0),
+            "percentage": round(t.get("percentage", 100), 1),
+            "rank": t.get("rank", 0),
+            "for": t.get("for", 0),
+            "against": t.get("against", 0),
+        })
+    print(f"  Fetched standings for {len(standings)} teams")
+    return standings
+
+
 # ── PATCH index.html ─────────────────────────────────────────────────────────
 
 def calculate_form_mult(standings, short):
@@ -427,7 +513,8 @@ def calculate_form_mult(standings, short):
     return round(max(0.82, min(1.18, base + pct_adj)), 3)
 
 
-def patch_index_html(round_num, round_games, standings, injured_map, ratings_map=None, odds_map=None):
+def patch_index_html(round_num, round_games, standings, injured_map, ratings_map=None, odds_map=None,
+                     squiggle_results=None, h2h_games=None, standings_raw=None):
     """Read index.html, patch TEAMS data and player out flags, then write back."""
     with open("index.html", "r", encoding="utf-8") as f:
         html = f.read()
@@ -505,7 +592,6 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
 
     # ── 5. Patch Sportsbet odds ──
     if odds_map:
-        import json as _json
         odds_json = _json.dumps(odds_map, separators=(',', ':'))
         new_html  = re.sub(
             r'const SPORTSBET_ODDS = \{[^;]*\};',
@@ -517,6 +603,42 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
             print(f"  Patched SPORTSBET_ODDS with {len(odds_map)} matches")
         else:
             print("  WARNING: SPORTSBET_ODDS pattern not found in index.html")
+
+    # ── 6. Embed Squiggle game results for accuracy tab ──
+    if squiggle_results is not None:
+        results_json = _json.dumps(squiggle_results, separators=(',', ':'))
+        marker = 'const SQUIGGLE_RESULTS = '
+        idx = html.find(marker)
+        if idx >= 0:
+            end_idx = html.index(';', idx) + 1
+            html = html[:idx] + f'{marker}{results_json};' + html[end_idx:]
+            print(f"  Patched SQUIGGLE_RESULTS with {len(squiggle_results)} rounds")
+        else:
+            print("  WARNING: SQUIGGLE_RESULTS pattern not found in index.html")
+
+    # ── 7. Embed head-to-head game history ──
+    if h2h_games is not None:
+        h2h_json = _json.dumps(h2h_games, separators=(',', ':'))
+        marker = 'const SQUIGGLE_H2H = '
+        idx = html.find(marker)
+        if idx >= 0:
+            end_idx = html.index(';', idx) + 1
+            html = html[:idx] + f'{marker}{h2h_json};' + html[end_idx:]
+            print(f"  Patched SQUIGGLE_H2H with {len(h2h_games)} games")
+        else:
+            print("  WARNING: SQUIGGLE_H2H pattern not found in index.html")
+
+    # ── 8. Embed ladder standings ──
+    if standings_raw is not None:
+        standings_json = _json.dumps(standings_raw, separators=(',', ':'))
+        marker = 'const SQUIGGLE_STANDINGS = '
+        idx = html.find(marker)
+        if idx >= 0:
+            end_idx = html.index(';', idx) + 1
+            html = html[:idx] + f'{marker}{standings_json};' + html[end_idx:]
+            print(f"  Patched SQUIGGLE_STANDINGS with {len(standings_raw)} teams")
+        else:
+            print("  WARNING: SQUIGGLE_STANDINGS pattern not found in index.html")
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html)
@@ -560,9 +682,16 @@ def main():
     print("\nFetching Sportsbet odds...")
     odds_map = fetch_sportsbet_odds()
 
-    # 6. Patch index.html
+    # 6. Fetch Squiggle data for browser (accuracy tab, game times, ladder, h2h)
+    print("\nFetching Squiggle data for browser embedding...")
+    squiggle_results = fetch_all_results()
+    h2h_games = fetch_h2h_results()
+    standings_raw = fetch_standings_data()
+
+    # 7. Patch index.html
     print(f"\nPatching index.html for Round {round_num}...")
-    patch_index_html(round_num, round_games, standings, injured_map, ratings_map, odds_map)
+    patch_index_html(round_num, round_games, standings, injured_map, ratings_map, odds_map,
+                     squiggle_results, h2h_games, standings_raw)
 
     print("\nAll done! Changes committed by GitHub Actions.\n")
 
