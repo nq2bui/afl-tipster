@@ -163,6 +163,68 @@ def fetch_supercoach_ratings():
     return ratings_map
 
 
+# ── AFL CFS API — PLAYER HEIGHTS ─────────────────────────────────────────────
+
+def fetch_player_heights(html):
+    """Fetch player heights (cm) from the AFL CFS playerProfile API.
+
+    Extracts feed_ids from the PLAYER_IMGS block in index.html, maps them to
+    tracked players in the TEAMS block, then fetches heightInCm from each
+    player's profile.
+
+    Returns {(team_code, surname): height_cm}
+    """
+    import time
+
+    # Extract (team, name) -> feed_id from PLAYER_IMGS
+    img_pattern = r'"([A-Z]{3}):([^"]+)":"[^"]*?/(\d+)\.png'
+    img_map = {}
+    for team, name, fid in re.findall(img_pattern, html):
+        img_map[(team, name)] = fid
+
+    # Extract tracked players from TEAMS
+    team_pattern = r'([A-Z]{3}):\{name:"[^"]+"[^[]+players:\[([^\]]+)\]'
+    player_pat = r'\{n:"([^"]+)",r:\d+,pos:"[A-Z]+",ht:\d+,out:(?:true|false)\}'
+
+    players = []
+    for team_code, players_str in re.findall(team_pattern, html):
+        for m in re.finditer(player_pat, players_str):
+            name = m.group(1)
+            fid = img_map.get((team_code, name))
+            if fid:
+                players.append((team_code, name, fid))
+
+    if not players:
+        print("  No players found to fetch heights for")
+        return {}
+
+    # Get WMCTok
+    token = get_wmctoken()
+    if not token:
+        print("  Cannot fetch heights without WMCTok")
+        return {}
+
+    headers = {**CFS_HEADERS, "x-media-mis-token": token}
+    heights = {}
+
+    for i, (team, name, fid) in enumerate(players):
+        try:
+            r = requests.get(f"{CFS_API_BASE}/playerProfile/CD_I{fid}",
+                             headers=headers, timeout=10)
+            if r.status_code == 200:
+                ht = r.json().get("playerProfile", {}).get("basicStats", {}).get("heightInCm", 0)
+                if ht:
+                    surname = name.split(". ", 1)[-1] if ". " in name else name
+                    heights[(team, surname)] = ht
+        except Exception as e:
+            pass
+        if (i + 1) % 20 == 0:
+            time.sleep(0.3)
+
+    print(f"  Fetched heights for {len(heights)} players")
+    return heights
+
+
 # ── AFL CFS API — MATCH ROSTERS ──────────────────────────────────────────────
 
 def get_wmctoken():
@@ -514,7 +576,7 @@ def calculate_form_mult(standings, short):
 
 
 def patch_index_html(round_num, round_games, standings, injured_map, ratings_map=None, odds_map=None,
-                     squiggle_results=None, h2h_games=None, standings_raw=None):
+                     squiggle_results=None, h2h_games=None, standings_raw=None, heights_map=None):
     """Read index.html, patch TEAMS data and player out flags, then write back."""
     with open("index.html", "r", encoding="utf-8") as f:
         html = f.read()
@@ -555,7 +617,7 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
                 break
             s_start, s_end = m.start(1), m.end(1)
             section    = html[s_start:s_end]
-            player_pat = rf'({{n:"[^"]*{re.escape(surname)}[^"]*",r:\d+,pos:"[A-Z]+",out:)false'
+            player_pat = rf'({{n:"[^"]*{re.escape(surname)}[^"]*",r:\d+,pos:"[A-Z]+",ht:\d+,out:)false'
             new_section = re.sub(player_pat, r'\1true', section, count=1)
             if new_section != section:
                 html = html[:s_start] + new_section + html[s_end:]
@@ -589,6 +651,33 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
             if changed:
                 html = html[:s_start] + section + html[s_end:]
         print(f"  Updated {updated} player ratings from SuperCoach")
+
+    # ── 4b. Update player heights from AFL CFS API ──
+    if heights_map:
+        updated = 0
+        for short in set(k[0] for k in heights_map):
+            team_pat = re.compile(
+                rf'{re.escape(short)}:{{[^[]+players:\[([^\]]*)\]',
+                re.DOTALL
+            )
+            m = team_pat.search(html)
+            if not m:
+                continue
+            s_start, s_end = m.start(1), m.end(1)
+            section = html[s_start:s_end]
+            changed = False
+            for (t_code, surname), height in heights_map.items():
+                if t_code != short:
+                    continue
+                pat = rf'({{n:"[^"]*{re.escape(surname)}[^"]*",r:\d+,pos:"[A-Z]+",ht:)\d+'
+                new_section = re.sub(pat, rf'\g<1>{height}', section, count=1)
+                if new_section != section:
+                    section = new_section
+                    changed = True
+                    updated += 1
+            if changed:
+                html = html[:s_start] + section + html[s_end:]
+        print(f"  Updated {updated} player heights from AFL CFS API")
 
     # ── 5. Patch Sportsbet odds ──
     if odds_map:
@@ -678,20 +767,26 @@ def main():
     if not ratings_map:
         print("  No SuperCoach ratings available — player ratings unchanged")
 
-    # 5. Fetch Sportsbet odds
+    # 5. AFL CFS API — player heights
+    print("\nFetching player heights from AFL CFS API...")
+    with open("index.html", "r", encoding="utf-8") as f:
+        current_html = f.read()
+    heights_map = fetch_player_heights(current_html)
+
+    # 6. Fetch Sportsbet odds
     print("\nFetching Sportsbet odds...")
     odds_map = fetch_sportsbet_odds()
 
-    # 6. Fetch Squiggle data for browser (accuracy tab, game times, ladder, h2h)
+    # 7. Fetch Squiggle data for browser (accuracy tab, game times, ladder, h2h)
     print("\nFetching Squiggle data for browser embedding...")
     squiggle_results = fetch_all_results()
     h2h_games = fetch_h2h_results()
     standings_raw = fetch_standings_data()
 
-    # 7. Patch index.html
+    # 8. Patch index.html
     print(f"\nPatching index.html for Round {round_num}...")
     patch_index_html(round_num, round_games, standings, injured_map, ratings_map, odds_map,
-                     squiggle_results, h2h_games, standings_raw)
+                     squiggle_results, h2h_games, standings_raw, heights_map)
 
     print("\nAll done! Changes committed by GitHub Actions.\n")
 
