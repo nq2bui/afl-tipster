@@ -640,12 +640,12 @@ const PLAYER_IMGS = {
 const TEAMS = {
   ADE:{name:"Adelaide",color:"#002B5C",baseRating:81,formMult:1.027,wins:7,losses:5,pct:107.4,rank:8,players:[
     {n:"R. Thilthorpe",r:99,pos:"FWD",ht:201,out:false},{n:"I. Rankine",r:84,pos:"FWD",ht:179,out:false},
-    {n:"T. Walker",r:82,pos:"FWD",ht:192,out:false},{n:"C. Ah Chee",r:78,pos:"FWD",ht:182,out:false},
+    {n:"T. Walker",r:82,pos:"FWD",ht:192,out:true},{n:"C. Ah Chee",r:78,pos:"FWD",ht:182,out:true},
     {n:"D. Fogarty",r:77,pos:"FWD",ht:192,out:false},{n:"J. Dawson",r:90,pos:"MID",ht:190,out:false},
     {n:"B. Keays",r:90,pos:"MID",ht:185,out:false},
     {n:"R. Laird",r:93,pos:"DEF",ht:178,out:false},{n:"W. Milera",r:79,pos:"DEF",ht:185,out:false},
     {n:"J. Worrell",r:85,pos:"DEF",ht:195,out:false},{n:"M. Michalanney",r:69,pos:"DEF",ht:190,out:false},
-    {n:"J. Butts",r:59,pos:"RCK",ht:195,out:false}]},
+    {n:"J. Butts",r:59,pos:"RCK",ht:195,out:true}]},
   BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.015,wins:7,losses:6,pct:106.2,rank:9,players:[
     {n:"L. Neale",r:86,pos:"MID",ht:177,out:false},{n:"D. Zorko",r:92,pos:"MID",ht:175,out:false},
     {n:"H. McCluggage",r:92,pos:"MID",ht:187,out:false},{n:"Z. Bailey",r:78,pos:"MID",ht:181,out:false},
@@ -754,7 +754,7 @@ const TEAMS = {
     {n:"A. Treloar",r:71,pos:"MID",ht:185,out:false},{n:"J. Freijah",r:75,pos:"MID",ht:191,out:false},
     {n:"B. Dale",r:92,pos:"MID",ht:188,out:false},{n:"A. Naughton",r:88,pos:"FWD",ht:196,out:false},
     {n:"R. Garcia",r:67,pos:"FWD",ht:178,out:false},{n:"L. Bramble",r:72,pos:"FWD",ht:182,out:false},
-    {n:"L. McNeil",r:68,pos:"FWD",ht:184,out:false},{n:"S. Darcy",r:98,pos:"FWD",ht:208,out:false},
+    {n:"L. McNeil",r:68,pos:"FWD",ht:184,out:true},{n:"S. Darcy",r:98,pos:"FWD",ht:208,out:false},
     {n:"T. English",r:83,pos:"RCK",ht:208,out:false},{n:"E. Richards",r:89,pos:"DEF",ht:188,out:false}]},
   WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.925,wins:4,losses:9,pct:71.3,rank:16,players:[
     {n:"E. Yeo",r:83,pos:"MID",ht:191,out:false},{n:"T. Kelly",r:72,pos:"MID",ht:184,out:false},
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"WBD-ADE":{"h":1.72,"a":2.13},"GEE-GCS":{"h":1.27,"a":3.78},"MEL-ESS":{"h":1.17,"a":5.1},"NTH-WCE":{"h":1.68,"a":2.19},"POR-SYD":{"h":3.13,"a":1.37},"RIC-BRI":{"h":9.2,"a":1.06},"STK-GWS":{"h":1.78,"a":2.08}};
+const SPORTSBET_ODDS = {"WBD-ADE":{"h":1.73,"a":2.12},"GEE-GCS":{"h":1.27,"a":3.8},"MEL-ESS":{"h":1.17,"a":5.1},"NTH-WCE":{"h":1.68,"a":2.2},"POR-SYD":{"h":3.16,"a":1.36},"RIC-BRI":{"h":9.2,"a":1.06},"STK-GWS":{"h":1.78,"a":2.08}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
