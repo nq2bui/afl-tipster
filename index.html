@@ -640,12 +640,12 @@ const PLAYER_IMGS = {
 const TEAMS = {
   ADE:{name:"Adelaide",color:"#002B5C",baseRating:81,formMult:1.04,wins:8,losses:5,pct:112.4,rank:5,players:[
     {n:"R. Thilthorpe",r:99,pos:"FWD",ht:201,out:false},{n:"I. Rankine",r:84,pos:"FWD",ht:179,out:false},
-    {n:"T. Walker",r:82,pos:"FWD",ht:192,out:false},{n:"C. Ah Chee",r:78,pos:"FWD",ht:182,out:false},
+    {n:"T. Walker",r:82,pos:"FWD",ht:192,out:true},{n:"C. Ah Chee",r:78,pos:"FWD",ht:182,out:true},
     {n:"D. Fogarty",r:77,pos:"FWD",ht:192,out:false},{n:"J. Dawson",r:90,pos:"MID",ht:190,out:false},
     {n:"B. Keays",r:90,pos:"MID",ht:185,out:false},
     {n:"R. Laird",r:93,pos:"DEF",ht:178,out:false},{n:"W. Milera",r:79,pos:"DEF",ht:185,out:false},
     {n:"J. Worrell",r:85,pos:"DEF",ht:195,out:false},{n:"M. Michalanney",r:69,pos:"DEF",ht:190,out:false},
-    {n:"J. Butts",r:59,pos:"RCK",ht:195,out:false}]},
+    {n:"J. Butts",r:59,pos:"RCK",ht:195,out:true}]},
   BRI:{name:"Brisbane Lions",color:"#A30046",baseRating:83,formMult:1.015,wins:7,losses:6,pct:106.2,rank:9,players:[
     {n:"L. Neale",r:86,pos:"MID",ht:177,out:false},{n:"D. Zorko",r:92,pos:"MID",ht:175,out:false},
     {n:"H. McCluggage",r:92,pos:"MID",ht:187,out:false},{n:"Z. Bailey",r:78,pos:"MID",ht:181,out:false},
@@ -685,14 +685,14 @@ const TEAMS = {
     {n:"P. Dangerfield",r:88,pos:"MID",ht:189,out:false},
     {n:"B. Smith",r:92,pos:"MID",ht:185,out:false},{n:"T. Atkins",r:83,pos:"MID",ht:180,out:false},
     {n:"M. Holmes",r:97,pos:"MID",ht:190,out:false},{n:"Z. Guthrie",r:80,pos:"MID",ht:188,out:false},
-    {n:"T. Stewart",r:87,pos:"DEF",ht:190,out:false},{n:"J. Kolodjashnij",r:69,pos:"DEF",ht:193,out:false},
+    {n:"T. Stewart",r:87,pos:"DEF",ht:190,out:true},{n:"J. Kolodjashnij",r:69,pos:"DEF",ht:193,out:false},
     {n:"S. De Koning",r:73,pos:"RCK",ht:204,out:false},{n:"R. Stanley",r:63,pos:"RCK",ht:200,out:false},{n:"J. Worpel",r:73,pos:"MID",ht:186,out:false}]},
   GCS:{name:"Gold Coast",color:"#CC2031",baseRating:80,formMult:1.032,wins:7,losses:5,pct:112.2,rank:8,players:[
     {n:"T. Miller",r:88,pos:"MID",ht:178,out:false},{n:"M. Rowell",r:92,pos:"MID",ht:180,out:false},
     {n:"N. Anderson",r:90,pos:"MID",ht:192,out:false},
     {n:"J. Ugle-Hagan",r:80,pos:"FWD",ht:197,out:false},{n:"B. King",r:79,pos:"FWD",ht:202,out:false},
-    {n:"C. Graham",r:78,pos:"FWD",ht:186,out:false},
-    {n:"J. Walter",r:66,pos:"FWD",ht:195,out:false},{n:"W. Powell",r:79,pos:"DEF",ht:188,out:false},
+    {n:"C. Graham",r:78,pos:"FWD",ht:186,out:true},
+    {n:"J. Walter",r:66,pos:"FWD",ht:195,out:false},{n:"W. Powell",r:79,pos:"DEF",ht:188,out:true},
     {n:"S. Collins",r:74,pos:"DEF",ht:194,out:false},{n:"C. Petracca",r:82,pos:"MID",ht:187,out:false}]},
   GWS:{name:"GWS Giants",color:"#FF7900",baseRating:79,formMult:1.003,wins:6,losses:6,pct:103.2,rank:10,players:[
     {n:"L. Whitfield",r:97,pos:"MID",ht:185,out:false},{n:"T. Green",r:89,pos:"MID",ht:192,out:false},
@@ -710,9 +710,9 @@ const TEAMS = {
   MEL:{name:"Melbourne",color:"#CC2031",baseRating:78,formMult:1.03,wins:8,losses:5,pct:102.3,rank:6,players:[
     {n:"M. Gawn",r:90,pos:"RCK",ht:209,out:false},{n:"J. Viney",r:78,pos:"MID",ht:179,out:false},
     {n:"J. Steele",r:81,pos:"MID",ht:187,out:false},{n:"C. Salem",r:86,pos:"MID",ht:184,out:false},
-    {n:"T. Sparrow",r:75,pos:"MID",ht:183,out:false},{n:"K. Pickett",r:80,pos:"FWD",ht:180,out:false},
-    {n:"T. McDonald",r:77,pos:"FWD",ht:195,out:false},{n:"B. Fritsch",r:80,pos:"FWD",ht:188,out:false},
-    {n:"J. Van Rooyen",r:70,pos:"FWD",ht:193,out:false},{n:"B. Mihocek",r:79,pos:"FWD",ht:192,out:false},
+    {n:"T. Sparrow",r:75,pos:"MID",ht:183,out:false},{n:"K. Pickett",r:80,pos:"FWD",ht:180,out:true},
+    {n:"T. McDonald",r:77,pos:"FWD",ht:195,out:true},{n:"B. Fritsch",r:80,pos:"FWD",ht:188,out:false},
+    {n:"J. Van Rooyen",r:70,pos:"FWD",ht:193,out:false},{n:"B. Mihocek",r:79,pos:"FWD",ht:192,out:true},
     {n:"J. Lever",r:72,pos:"DEF",ht:194,out:false},
     {n:"S. May",r:75,pos:"DEF",ht:191,out:false},{n:"J. Bowey",r:87,pos:"DEF",ht:175,out:false}]},
   NTH:{name:"North Melbourne",color:"#013B9F",baseRating:74,formMult:0.968,wins:5,losses:7,pct:87.7,rank:14,players:[
@@ -729,7 +729,7 @@ const TEAMS = {
     {n:"K. Farrell",r:84,pos:"FWD",ht:182,out:false}]},
   RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.88,wins:2,losses:10,pct:60.4,rank:17,players:[
     {n:"T. Taranto",r:83,pos:"MID",ht:188,out:false},{n:"D. Prestia",r:76,pos:"MID",ht:175,out:false},
-    {n:"J. Hopper",r:79,pos:"MID",ht:187,out:false},{n:"J. Ross",r:74,pos:"MID",ht:187,out:false},
+    {n:"J. Hopper",r:79,pos:"MID",ht:187,out:false},{n:"J. Ross",r:74,pos:"MID",ht:187,out:true},
     {n:"T. Lynch",r:73,pos:"FWD",ht:199,out:false},
     {n:"M. Rioli",r:68,pos:"FWD",ht:179,out:false},
     {n:"T. Brown",r:71,pos:"FWD",ht:193,out:false},{n:"T. Nankervis",r:77,pos:"RCK",ht:199,out:false},
@@ -743,7 +743,7 @@ const TEAMS = {
     {n:"J. Sinclair",r:98,pos:"DEF",ht:181,out:false}]},
   SYD:{name:"Sydney Swans",color:"#ED171F",baseRating:84,formMult:1.13,wins:11,losses:2,pct:147.3,rank:2,players:[
     {n:"E. Gulden",r:86,pos:"MID",ht:175,out:false},{n:"I. Heeney",r:88,pos:"MID",ht:185,out:false},
-    {n:"C. Mills",r:91,pos:"MID",ht:188,out:false},{n:"J. McInerney",r:79,pos:"MID",ht:189,out:false},
+    {n:"C. Mills",r:91,pos:"MID",ht:188,out:false},{n:"J. McInerney",r:79,pos:"MID",ht:189,out:true},
     {n:"T. Papley",r:79,pos:"FWD",ht:177,out:false},
     {n:"L. McDonald",r:73,pos:"FWD",ht:195,out:false},{n:"J. Amartey",r:73,pos:"FWD",ht:195,out:false},
     {n:"T. Blakey",r:92,pos:"FWD",ht:196,out:false},{n:"H. McLean",r:76,pos:"FWD",ht:197,out:false},
@@ -754,7 +754,7 @@ const TEAMS = {
     {n:"A. Treloar",r:71,pos:"MID",ht:185,out:false},{n:"J. Freijah",r:75,pos:"MID",ht:191,out:false},
     {n:"B. Dale",r:92,pos:"MID",ht:188,out:false},{n:"A. Naughton",r:88,pos:"FWD",ht:196,out:false},
     {n:"R. Garcia",r:67,pos:"FWD",ht:178,out:false},{n:"L. Bramble",r:72,pos:"FWD",ht:182,out:false},
-    {n:"L. McNeil",r:68,pos:"FWD",ht:184,out:false},{n:"S. Darcy",r:98,pos:"FWD",ht:208,out:false},
+    {n:"L. McNeil",r:68,pos:"FWD",ht:184,out:true},{n:"S. Darcy",r:98,pos:"FWD",ht:208,out:false},
     {n:"T. English",r:83,pos:"RCK",ht:208,out:false},{n:"E. Richards",r:89,pos:"DEF",ht:188,out:false}]},
   WCE:{name:"West Coast",color:"#003087",baseRating:65,formMult:0.925,wins:4,losses:9,pct:71.3,rank:16,players:[
     {n:"E. Yeo",r:83,pos:"MID",ht:191,out:false},{n:"T. Kelly",r:72,pos:"MID",ht:184,out:false},
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"GEE-GCS":{"h":1.24,"a":4.1},"MEL-ESS":{"h":1.18,"a":4.95},"NTH-WCE":{"h":1.49,"a":2.63},"POR-SYD":{"h":2.84,"a":1.43},"RIC-BRI":{"h":8.5,"a":1.07},"STK-GWS":{"h":1.78,"a":2.08}};
+const SPORTSBET_ODDS = {"GEE-GCS":{"h":1.23,"a":4.2},"MEL-ESS":{"h":1.18,"a":4.9},"NTH-WCE":{"h":1.49,"a":2.63},"POR-SYD":{"h":2.86,"a":1.43},"RIC-BRI":{"h":9.5,"a":1.06},"STK-GWS":{"h":1.78,"a":2.08}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
