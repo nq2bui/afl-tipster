@@ -729,7 +729,7 @@ const TEAMS = {
     {n:"K. Farrell",r:84,pos:"FWD",ht:182,out:true}]},
   RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.878,wins:2,losses:11,pct:61.1,rank:17,players:[
     {n:"T. Taranto",r:83,pos:"MID",ht:188,out:false},{n:"D. Prestia",r:76,pos:"MID",ht:175,out:false},
-    {n:"J. Hopper",r:79,pos:"MID",ht:187,out:false},{n:"J. Ross",r:74,pos:"MID",ht:187,out:false},
+    {n:"J. Hopper",r:79,pos:"MID",ht:187,out:true},{n:"J. Ross",r:74,pos:"MID",ht:187,out:false},
     {n:"T. Lynch",r:73,pos:"FWD",ht:199,out:false},
     {n:"M. Rioli",r:68,pos:"FWD",ht:179,out:false},
     {n:"T. Brown",r:71,pos:"FWD",ht:193,out:false},{n:"T. Nankervis",r:77,pos:"RCK",ht:199,out:false},
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"GCS-HAW":{"h":2.17,"a":1.69},"ADE-MEL":{"h":1.36,"a":3.16},"GWS-CAR":{"h":1.34,"a":3.28},"COL-POR":{"h":1.5,"a":2.61},"RIC-NTH":{"h":3.19,"a":1.36},"STK-WBD":{"h":1.78,"a":2.08}};
+const SPORTSBET_ODDS = {"GCS-HAW":{"h":2.17,"a":1.69},"ADE-MEL":{"h":1.36,"a":3.18},"GWS-CAR":{"h":1.34,"a":3.28},"COL-POR":{"h":1.5,"a":2.62},"RIC-NTH":{"h":3.37,"a":1.33},"STK-WBD":{"h":1.78,"a":2.08}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
