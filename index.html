@@ -746,7 +746,7 @@ const TEAMS = {
     {n:"C. Mills",r:91,pos:"MID",ht:188,out:false},{n:"J. McInerney",r:79,pos:"MID",ht:189,out:false},
     {n:"T. Papley",r:79,pos:"FWD",ht:177,out:false},
     {n:"L. McDonald",r:73,pos:"FWD",ht:195,out:false},{n:"J. Amartey",r:73,pos:"FWD",ht:195,out:false},
-    {n:"T. Blakey",r:92,pos:"FWD",ht:196,out:false},{n:"H. McLean",r:76,pos:"FWD",ht:197,out:false},
+    {n:"T. Blakey",r:92,pos:"FWD",ht:196,out:false},{n:"H. McLean",r:76,pos:"FWD",ht:197,out:true},
     {n:"N. Blakey",r:92,pos:"DEF",ht:196,out:false},{n:"B. Grundy",r:89,pos:"RCK",ht:202,out:false},
     {n:"C. Curnow",r:82,pos:"FWD",ht:194,out:false},{n:"M. Rosas",r:58,pos:"FWD",ht:180,out:false}]},
   WBD:{name:"W. Bulldogs",color:"#014896",baseRating:83,formMult:1.017,wins:9,losses:6,pct:92.8,rank:7,players:[
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"BRI-SYD":{"h":1.96,"a":1.88},"HAW-GWS":{"h":1.33,"a":3.34},"CAR-WCE":{"h":1.16,"a":5.5},"COL-RIC":{"h":1.11,"a":6.7},"POR-ADE":{"h":3.66,"a":1.29},"NTH-ESS":{"h":1.44,"a":2.82},"FRE-GCS":{"h":1.2,"a":4.6}};
+const SPORTSBET_ODDS = {"BRI-SYD":{"h":2.04,"a":1.81},"HAW-GWS":{"h":1.32,"a":3.42},"CAR-WCE":{"h":1.16,"a":5.5},"COL-RIC":{"h":1.11,"a":6.7},"POR-ADE":{"h":3.7,"a":1.28},"NTH-ESS":{"h":1.45,"a":2.77},"FRE-GCS":{"h":1.2,"a":4.6}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
