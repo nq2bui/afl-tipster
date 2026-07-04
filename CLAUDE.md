@@ -56,11 +56,25 @@ TEAM: {
 
 ## 2026 Roster (last verified 2026-03-26 via SuperCoach API)
 
+> Re-verify monthly against the SuperCoach player API — trades/retirements
+> are not auto-detected. Last check: 2026-03-26 (now 3+ months stale).
+
 **Retired:** M. Crouch (ADE), J. Daniher (BRI), E. Curnow (CAR), G. Rohan (GEE), M. Schache (HAW), C. Lazzaro/J. Hoogaard (NTH), J. Finlayson/I. Nankervis (POR), B. Paton (STK), A. West (WCE)
 
 **Traded:** O. Henry COL→GEE, J. Lukosius GCS→POR, H. Himmelberg/D. Rioli GWS→GCS, N. Haynes GWS→CAR, L. Bramble HAW→WBD, D. Houston POR→COL, J. Battle STK→HAW, T. Barrass WCE→HAW, C. Daniel WBD→NTH, C. Petracca MEL→GCS, C. Curnow CAR→SYD
 
 **Name fix:** SYD `J. Papley` → `T. Papley` (Tom Papley)
+
+## FIXTURE Data
+
+`FIXTURE` in `index.html` (match list, venues, day/date labels) is hand-typed
+and is **not** derived from `SQUIGGLE_RESULTS` (the live data patched in each
+cron run) — the two can silently disagree. This happened for real: Round 17
+had 6 of 9 matches showing the wrong day. `update_simulator.py` now runs
+`validate_fixture_dates()` on every cron run, which diffs `FIXTURE`'s
+day-of-week against Squiggle's actual kickoff dates and prints a `WARNING`
+per mismatch to the Action log — check there before trusting a newly-typed
+round's dates.
 
 ## Common Pitfalls
 

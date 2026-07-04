@@ -557,6 +557,62 @@ def fetch_standings_data():
     return standings
 
 
+# ── FIXTURE VALIDATION ───────────────────────────────────────────────────────
+
+def validate_fixture_dates(html, squiggle_results):
+    """Cross-check the hand-typed FIXTURE dates/days against live Squiggle data.
+
+    FIXTURE's "venue" strings (e.g. "GMHBA · Thu 2 Jul") are hand-transcribed
+    and can drift from the real schedule without anyone noticing until a user
+    sees the wrong day on the dashboard (happened for Round 17 2026-07-04).
+    Prints a warning per mismatch so it shows up in the Action run log.
+    """
+    round_pat = re.compile(
+        r'"(\w+)":\{label:"[^"]*",dates:"[^"]*"(?:,byes:\[[^\]]*\])?,matches:\[(.*?)\]\},',
+        re.DOTALL,
+    )
+    match_pat = re.compile(r'\{h:"(\w+)",a:"(\w+)",venue:"[^"]*?(\w{3}) (\d{1,2}) (\w{3})"')
+
+    mismatches = 0
+    for round_key, body in round_pat.findall(html):
+        sq_key = "0" if round_key == "OR" else round_key
+        games = squiggle_results.get(sq_key)
+        if not games:
+            continue
+
+        # Skip rounds where Squiggle hasn't locked in real kickoff times yet —
+        # provisional rounds list every game at (near-)identical placeholder
+        # times, which would otherwise look like a wall of false positives.
+        dates_seen = [g.get("date", "") for g in games if g.get("date")]
+        if dates_seen and len(set(dates_seen)) <= max(1, len(dates_seen) // 2):
+            continue
+
+        actual_day_by_pair = {}
+        for g in games:
+            h = SQUIGGLE_TEAM_MAP.get(g.get("hteam") or "")
+            a = SQUIGGLE_TEAM_MAP.get(g.get("ateam") or "")
+            date_str = g.get("date", "")
+            if not h or not a or not date_str:
+                continue
+            try:
+                dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                continue
+            actual_day_by_pair[(h, a)] = dt.strftime("%a")
+
+        for h, a, day, day_num, month in match_pat.findall(body):
+            expected_day = actual_day_by_pair.get((h, a))
+            if expected_day and expected_day != day:
+                print(f"  WARNING: FIXTURE[\"{round_key}\"] {h} v {a} says {day} {day_num} "
+                      f"{month}, Squiggle has it on {expected_day} — check the venue string")
+                mismatches += 1
+
+    if mismatches:
+        print(f"\n  ⚠ FIXTURE date validation: {mismatches} mismatch(es) found — see warnings above")
+    else:
+        print("  FIXTURE date validation: all matched rounds check out against Squiggle")
+
+
 # ── PATCH index.html ─────────────────────────────────────────────────────────
 
 def calculate_form_mult(standings, short):
@@ -580,6 +636,10 @@ def patch_index_html(round_num, round_games, standings, injured_map, ratings_map
     """Read index.html, patch TEAMS data and player out flags, then write back."""
     with open("index.html", "r", encoding="utf-8") as f:
         html = f.read()
+
+    # ── 0. Validate FIXTURE dates against live Squiggle data ──
+    if squiggle_results:
+        validate_fixture_dates(html, squiggle_results)
 
     # ── 1. Update formMult and ladder standings for each team ──
     for short, s in standings.items():
