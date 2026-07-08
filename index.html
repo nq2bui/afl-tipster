@@ -674,8 +674,8 @@ const TEAMS = {
     {n:"M. Redman",r:88,pos:"DEF",ht:187,out:false}]},
   FRE:{name:"Fremantle",color:"#2A1A5E",baseRating:81,formMult:1.132,wins:14,losses:2,pct:141.6,rank:1,players:[
     {n:"A. Brayshaw",r:90,pos:"MID",ht:185,out:false},{n:"C. Serong",r:86,pos:"MID",ht:180,out:false},
-    {n:"H. Young",r:71,pos:"MID",ht:189,out:false},{n:"L. Jackson",r:83,pos:"RCK",ht:199,out:false},
-    {n:"S. Darcy",r:68,pos:"RCK",ht:203,out:false},{n:"M. Johnson",r:72,pos:"FWD",ht:193,out:false},
+    {n:"H. Young",r:71,pos:"MID",ht:189,out:true},{n:"L. Jackson",r:83,pos:"RCK",ht:199,out:false},
+    {n:"S. Darcy",r:68,pos:"RCK",ht:203,out:true},{n:"M. Johnson",r:72,pos:"FWD",ht:193,out:false},
     {n:"J. Amiss",r:68,pos:"FWD",ht:196,out:false},{n:"N. Erasmus",r:67,pos:"FWD",ht:190,out:false},
     {n:"S. Bolton",r:75,pos:"FWD",ht:176,out:false},{n:"L. Ryan",r:87,pos:"DEF",ht:186,out:false},
     {n:"A. Pearce",r:73,pos:"DEF",ht:201,out:false},{n:"H. Chapman",r:70,pos:"DEF",ht:193,out:false}]},
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"FRE-SYD":{"h":1.48,"a":2.66},"COL-NTH":{"h":1.39,"a":3.03},"STK-POR":{"h":1.56,"a":2.43},"GWS-GEE":{"h":2.35,"a":1.6},"CAR-HAW":{"h":2.72,"a":1.46},"ADE-GCS":{"h":1.37,"a":3.14},"WBD-WCE":{"h":1.13,"a":6.05},"MEL-RIC":{"h":1.08,"a":8.0},"BRI-ESS":{"h":1.02,"a":17.0}};
+const SPORTSBET_ODDS = {"FRE-SYD":{"h":1.49,"a":2.63},"COL-NTH":{"h":1.39,"a":3.03},"STK-POR":{"h":1.56,"a":2.43},"GWS-GEE":{"h":2.41,"a":1.57},"CAR-HAW":{"h":2.76,"a":1.45},"ADE-GCS":{"h":1.36,"a":3.19},"WBD-WCE":{"h":1.13,"a":6.05},"MEL-RIC":{"h":1.1,"a":7.0},"BRI-ESS":{"h":1.02,"a":17.0}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
