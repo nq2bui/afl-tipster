@@ -657,7 +657,7 @@ const TEAMS = {
     {n:"P. Cripps",r:83,pos:"MID",ht:195,out:false},{n:"S. Walsh",r:84,pos:"MID",ht:184,out:false},
     {n:"G. Hewett",r:89,pos:"MID",ht:187,out:false},{n:"L. Fogarty",r:78,pos:"MID",ht:180,out:false},{n:"H. McKay",r:92,pos:"FWD",ht:200,out:false},
     {n:"M. Cottrell",r:72,pos:"FWD",ht:184,out:false},
-    {n:"A. Saad",r:80,pos:"DEF",ht:178,out:false},{n:"M. Pittonet",r:71,pos:"RCK",ht:202,out:false},
+    {n:"A. Saad",r:80,pos:"DEF",ht:178,out:false},{n:"M. Pittonet",r:71,pos:"RCK",ht:202,out:true},
     {n:"L. Cowan",r:72,pos:"DEF",ht:188,out:false},{n:"B. Kemp",r:67,pos:"DEF",ht:192,out:false},
     {n:"O. Florent",r:66,pos:"MID",ht:184,out:false},{n:"B. Ainsworth",r:76,pos:"FWD",ht:178,out:false}]},
   COL:{name:"Collingwood",color:"#000000",baseRating:82,formMult:1.012,wins:8,losses:7,pct:104.5,rank:9,players:[
@@ -733,7 +733,7 @@ const TEAMS = {
     {n:"T. Lynch",r:73,pos:"FWD",ht:199,out:false},
     {n:"M. Rioli",r:68,pos:"FWD",ht:179,out:false},
     {n:"T. Brown",r:71,pos:"FWD",ht:193,out:false},{n:"T. Nankervis",r:77,pos:"RCK",ht:199,out:false},
-    {n:"N. Vlastuin",r:85,pos:"DEF",ht:187,out:false},{n:"J. Short",r:82,pos:"DEF",ht:178,out:false}]},
+    {n:"N. Vlastuin",r:85,pos:"DEF",ht:187,out:false},{n:"J. Short",r:82,pos:"DEF",ht:178,out:true}]},
   STK:{name:"St Kilda",color:"#ED0F05",baseRating:76,formMult:0.99,wins:7,losses:9,pct:105.5,rank:12,players:[
     {n:"T. De Koning",r:77,pos:"RCK",ht:201,out:false},{n:"R. Marshall",r:80,pos:"RCK",ht:201,out:false},
     {n:"J. Macrae",r:84,pos:"MID",ht:192,out:false},{n:"M. Wood",r:71,pos:"MID",ht:192,out:false},
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"COL-NTH":{"h":1.38,"a":3.07},"STK-POR":{"h":1.56,"a":2.44},"GWS-GEE":{"h":2.39,"a":1.58},"CAR-HAW":{"h":2.54,"a":1.52},"ADE-GCS":{"h":1.35,"a":3.21},"WBD-WCE":{"h":1.13,"a":6.05},"MEL-RIC":{"h":1.09,"a":7.5},"BRI-ESS":{"h":1.02,"a":15.0}};
+const SPORTSBET_ODDS = {"COL-NTH":{"h":1.37,"a":3.13},"STK-POR":{"h":1.58,"a":2.39},"GWS-GEE":{"h":2.32,"a":1.61},"CAR-HAW":{"h":2.57,"a":1.51},"ADE-GCS":{"h":1.33,"a":3.36},"WBD-WCE":{"h":1.13,"a":6.05},"MEL-RIC":{"h":1.09,"a":7.5},"BRI-ESS":{"h":1.02,"a":15.0}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
