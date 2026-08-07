@@ -725,7 +725,7 @@ const TEAMS = {
     {n:"Z. Butters",r:93,pos:"MID",ht:181,out:false},{n:"C. Rozee",r:94,pos:"MID",ht:185,out:false},
     {n:"J. Horne-Francis",r:81,pos:"MID",ht:185,out:false},{n:"O. Wines",r:80,pos:"MID",ht:187,out:false},
     {n:"W. Drew",r:76,pos:"MID",ht:188,out:false},{n:"S. Powell-Pepper",r:81,pos:"MID",ht:187,out:false},
-    {n:"T. Marshall",r:79,pos:"FWD",ht:198,out:false},{n:"M. Georgiades",r:83,pos:"FWD",ht:192,out:false},
+    {n:"T. Marshall",r:79,pos:"FWD",ht:198,out:false},{n:"M. Georgiades",r:83,pos:"FWD",ht:192,out:true},
     {n:"K. Farrell",r:84,pos:"FWD",ht:182,out:false}]},
   RIC:{name:"Richmond",color:"#FFD200",baseRating:70,formMult:0.879,wins:3,losses:17,pct:62.8,rank:17,players:[
     {n:"T. Taranto",r:83,pos:"MID",ht:188,out:false},{n:"D. Prestia",r:76,pos:"MID",ht:175,out:false},
@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"BRI-HAW":{"h":1.68,"a":2.19},"MEL-FRE":{"h":2.46,"a":1.55},"SYD-POR":{"h":1.13,"a":6.05},"GEE-ESS":{"h":1.01,"a":19.0},"ADE-RIC":{"h":1.02,"a":17.0},"GWS-GCS":{"h":1.34,"a":3.28},"WCE-COL":{"h":2.39,"a":1.58},"STK-CAR":{"h":2.21,"a":1.67},"FRE-ADE":{"h":1.3,"a":3.54},"RIC-STK":{"h":6.05,"a":1.13},"NTH-GEE":{"h":3.5,"a":1.31},"BRI-GCS":{"h":1.22,"a":4.3},"HAW-COL":{"h":1.36,"a":3.16},"POR-MEL":{"h":2.81,"a":1.44},"GWS-WCE":{"h":1.13,"a":6.05},"WBD-CAR":{"h":1.91,"a":1.92},"ESS-SYD":{"h":12.5,"a":1.03}};
+const SPORTSBET_ODDS = {"BRI-HAW":{"h":1.78,"a":2.08},"MEL-FRE":{"h":2.49,"a":1.54},"SYD-POR":{"h":1.09,"a":7.5},"GEE-ESS":{"h":1.01,"a":19.0},"ADE-RIC":{"h":1.02,"a":17.0},"GWS-GCS":{"h":1.34,"a":3.3},"WCE-COL":{"h":2.41,"a":1.57},"STK-CAR":{"h":2.17,"a":1.69},"FRE-ADE":{"h":1.3,"a":3.54},"RIC-STK":{"h":6.05,"a":1.13},"NTH-GEE":{"h":3.5,"a":1.31},"BRI-GCS":{"h":1.22,"a":4.3},"HAW-COL":{"h":1.36,"a":3.16},"POR-MEL":{"h":2.81,"a":1.44},"GWS-WCE":{"h":1.13,"a":6.05},"WBD-CAR":{"h":1.91,"a":1.92},"ESS-SYD":{"h":12.5,"a":1.03}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
