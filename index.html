@@ -1053,7 +1053,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"FRE-HAW":{"h":1.45,"a":2.76},"GEE-CAR":{"h":1.64,"a":2.27},"SYD-BRI":{"h":3.73,"a":1.28},"ADE-WBD":{"h":1.4,"a":2.96}};
+const SPORTSBET_ODDS = {"FRE-HAW":{"h":1.43,"a":2.86},"GEE-CAR":{"h":1.58,"a":2.39},"SYD-BRI":{"h":3.66,"a":1.29},"ADE-WBD":{"h":1.39,"a":3.01}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
