@@ -1025,9 +1025,30 @@ const FIXTURE = {
     {h:"SYD",a:"NTH",venue:"SCG · Sat 23 Aug",hga:7,h2h:4},
     {h:"WCE",a:"HAW",venue:"Optus Stadium · Sun 24 Aug",hga:7,h2h:-3},
   ]},
+  "25":{label:"Wildcard Finals",dates:"28–29 Aug",matches:[
+    {h:"WBD",a:"COL",venue:"MCG · Fri 28 Aug",hga:5,h2h:1},
+    {h:"MEL",a:"CAR",venue:"MCG · Sat 29 Aug",hga:5,h2h:3},
+  ]},
+  "26":{label:"Qualifying & Elimination Finals",dates:"3–5 Sep",matches:[
+    {h:"FRE",a:"HAW",venue:"Optus Stadium · Thu 3 Sep",hga:9,h2h:3},
+    {h:"GEE",a:"CAR",venue:"MCG · Fri 4 Sep",hga:3,h2h:5},
+    {h:"SYD",a:"BRI",venue:"SCG · Sat 5 Sep",hga:7,h2h:1},
+    {h:"ADE",a:"WBD",venue:"Adelaide Oval · Sat 5 Sep",hga:7,h2h:2},
+  ]},
+  "27":{label:"Semi Finals",dates:"11–12 Sep",matches:[
+    {h:"FRE",a:"GEE",venue:"Optus Stadium · Fri 11 Sep",hga:9,h2h:4},
+    {h:"BRI",a:"ADE",venue:"Gabba · Sat 12 Sep",hga:7,h2h:3},
+  ]},
+  "28":{label:"Preliminary Finals",dates:"18–19 Sep",matches:[
+    {h:"SYD",a:"FRE",venue:"SCG · Fri 18 Sep",hga:7,h2h:-1},
+    {h:"HAW",a:"BRI",venue:"MCG · Sat 19 Sep",hga:3,h2h:-1},
+  ]},
+  "29":{label:"Grand Final",dates:"26 Sep",matches:[
+    {h:"TBC",a:"TBC",venue:"MCG · Sat 26 Sep",hga:0,h2h:0},
+  ]},
 };
 
-const ROUND_KEYS = ["OR","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24"];
+const ROUND_KEYS = ["OR","1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29"];
 
 function detectCurrentRound() {
   const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
