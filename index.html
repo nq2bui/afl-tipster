@@ -743,7 +743,7 @@ const TEAMS = {
     {n:"J. Sinclair",r:98,pos:"DEF",ht:181,out:false}]},
   SYD:{name:"Sydney Swans",color:"#ED171F",baseRating:84,formMult:1.104,wins:18,losses:5,pct:136.1,rank:2,players:[
     {n:"E. Gulden",r:86,pos:"MID",ht:175,out:false},{n:"I. Heeney",r:88,pos:"MID",ht:185,out:false},
-    {n:"C. Mills",r:91,pos:"MID",ht:188,out:false},{n:"J. McInerney",r:78,pos:"MID",ht:189,out:false},
+    {n:"C. Mills",r:91,pos:"MID",ht:188,out:true},{n:"J. McInerney",r:78,pos:"MID",ht:189,out:false},
     {n:"T. Papley",r:79,pos:"FWD",ht:177,out:false},
     {n:"L. McDonald",r:73,pos:"FWD",ht:195,out:false},{n:"J. Amartey",r:73,pos:"FWD",ht:195,out:false},
     {n:"T. Blakey",r:92,pos:"FWD",ht:196,out:false},{n:"H. McLean",r:76,pos:"FWD",ht:197,out:false},
@@ -1074,7 +1074,7 @@ function detectCurrentRound() {
 let currentRound = detectCurrentRound();
 let simResults = {};
 // SPORTSBET_ODDS patched weekly by update_simulator.py — "HOME-AWAY": {h: decimal, a: decimal}
-const SPORTSBET_ODDS = {"SYD-FRE":{"h":2.45,"a":1.55},"HAW-BRI":{"h":2.0,"a":1.8}};
+const SPORTSBET_ODDS = {"SYD-FRE":{"h":2.43,"a":1.56},"HAW-BRI":{"h":1.95,"a":1.85}};
 function getOddsData(ht,at){const d=SPORTSBET_ODDS[`${ht}-${at}`];if(d)return d;const rv=SPORTSBET_ODDS[`${at}-${ht}`];if(rv)return{h:rv.a,a:rv.h};return null;}
 function fmtOdds(p){return p>0.01?'$'+(1/p).toFixed(2):'—';}
 function calcEdge(mp,sb){if(!sb||sb<=0)return null;return(mp-1/sb)*100;}
